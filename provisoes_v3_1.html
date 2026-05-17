@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Provisões V3.1 - Senior</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#09090b">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#09090b">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -21,7 +24,6 @@
 </head>
 <body class="min-h-screen pb-24">
 
-    <!-- Header / Dashboard Senior -->
     <header class="sticky top-0 z-30 glass-card p-5 rounded-b-[2.5rem] shadow-2xl mb-6">
         <div class="flex flex-col items-center text-center">
             <span class="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Saldo Acumulado</span>
@@ -41,7 +43,6 @@
     </header>
 
     <main class="px-4 space-y-6">
-        <!-- Depósito Diário -->
         <section class="glass-card p-4 rounded-3xl">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Depósito Diário</h3>
@@ -58,7 +59,6 @@
             </div>
         </section>
 
-        <!-- Ações Rápidas -->
         <div class="grid grid-cols-2 gap-3">
             <button onclick="openAporteModal()" class="flex items-center justify-center gap-2 p-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl border border-zinc-700 transition-all active:scale-95">
                 <i data-lucide="arrow-up-circle" class="text-blue-400 w-5 h-5"></i>
@@ -70,27 +70,21 @@
             </button>
         </div>
 
-        <!-- Cronograma de 3 Meses -->
         <section>
             <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 ml-1">Cronograma de Meses</h3>
             <div id="monthly-schedule" class="grid grid-cols-3 gap-2">
-                <!-- Injected by JS: 3 Months only -->
-            </div>
+                </div>
         </section>
 
-        <!-- Filtros -->
         <div class="flex border-b border-zinc-800">
             <button onclick="setFilter('pending')" id="tab-pending" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest tab-active">Pendentes</button>
             <button onclick="setFilter('paid')" id="tab-paid" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-zinc-500">Pagas</button>
             <button onclick="setFilter('all')" id="tab-all" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-zinc-500">Tudo</button>
         </div>
 
-        <!-- Lista de Contas -->
         <div id="bills-container" class="space-y-3">
-            <!-- Injected by JS -->
-        </div>
+            </div>
 
-        <!-- Botão Reset -->
         <div class="pt-8 pb-4 flex justify-center">
             <button onclick="resetAllData()" class="text-rose-500/60 hover:text-rose-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors">
                 <i data-lucide="trash-2" class="w-3 h-3"></i>
@@ -99,7 +93,6 @@
         </div>
     </main>
 
-    <!-- Modal: Nova Conta -->
     <div id="bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl animate-in slide-in-from-bottom duration-300">
             <div class="flex justify-between items-center mb-6">
@@ -147,7 +140,6 @@
         </div>
     </div>
 
-    <!-- Modal: Aporte -->
     <div id="aporte-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-6 border border-zinc-800 shadow-2xl">
             <h3 class="text-lg font-bold mb-4 text-center">Realizar Aporte</h3>
@@ -163,34 +155,21 @@
     </div>
 
     <script>
-        // --- State ---
-        let state = {
-            balance: 0,
-            bills: [],
-            history: [],
-            filter: 'pending'
-        };
-
+        let state = { balance: 0, bills: [], history: [], filter: 'pending' };
         const STORAGE_KEY = 'provisoes_v3_1_data';
 
         function init() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) state = JSON.parse(saved);
-            
             const today = new Date();
             document.getElementById('today-date').innerText = today.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-            
             checkTodayDeposit();
-            generateRecurringBills(); // Auto-generate for the 3-month window
+            generateRecurringBills();
             render();
         }
 
-        function save() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-            render();
-        }
+        function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); }
 
-        // --- Logic ---
         function confirmDailyDeposit() {
             const amount = parseFloat(document.getElementById('daily-input').value);
             const todayStr = new Date().toISOString().split('T')[0];
@@ -221,12 +200,7 @@
 
         function confirmAporte() {
             const val = parseFloat(document.getElementById('aporte-value').value);
-            if (val > 0) {
-                state.balance += val;
-                save();
-                closeAporteModal();
-                document.getElementById('aporte-value').value = '';
-            }
+            if (val > 0) { state.balance += val; save(); closeAporteModal(); document.getElementById('aporte-value').value = ''; }
         }
 
         function payBill(id) {
@@ -235,235 +209,106 @@
                 if (state.balance >= bill.value) {
                     state.balance -= bill.value;
                     bill.paid = true;
-                    
-                    // If recurring, ensure next one is generated
-                    if (bill.recurring) {
-                        generateRecurringBills();
-                    }
+                    if (bill.recurring) generateRecurringBills();
                     save();
-                } else {
-                    alert('Saldo insuficiente no cofrinho!');
-                }
+                } else { alert('Saldo insuficiente no cofrinho!'); }
             }
         }
 
-        function deleteBill(id) {
-            if (confirm('Excluir este lançamento?')) {
-                state.bills = state.bills.filter(b => b.id !== id);
-                save();
-            }
-        }
+        function deleteBill(id) { if (confirm('Excluir este lançamento?')) { state.bills = state.bills.filter(b => b.id !== id); save(); } }
+        function resetAllData() { if (confirm('ATENÇÃO: Isso apagará todos os seus dados permanentemente. Confirmar?')) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }
 
-        function resetAllData() {
-            if (confirm('ATENÇÃO: Isso apagará todos os seus dados permanentemente. Confirmar?')) {
-                localStorage.removeItem(STORAGE_KEY);
-                location.reload();
-            }
-        }
-
-        // --- Engineering: Recurring & Installments ---
         function generateRecurringBills() {
             const now = new Date();
             const windowMonths = 3;
             let added = false;
-
             state.bills.filter(b => b.recurring).forEach(baseBill => {
-                // Find the latest instance of this recurring bill
                 const instances = state.bills.filter(b => b.name === baseBill.name && b.recurring);
                 instances.sort((a, b) => new Date(b.date) - new Date(a.date));
                 const latest = instances[0];
-
                 let currentRefDate = new Date(latest.date + 'T00:00:00');
                 const originalDay = new Date(baseBill.originalDate || baseBill.date + 'T00:00:00').getDate();
-
-                // Generate up to 3 months from now
                 const limitDate = new Date(now.getFullYear(), now.getMonth() + windowMonths, 1);
-
                 while (currentRefDate < limitDate) {
-                    // Move to next month
                     let nextDate = new Date(currentRefDate);
                     nextDate.setMonth(nextDate.getMonth() + 1);
-                    
-                    // Fix day for months with fewer days
                     nextDate.setDate(originalDay);
-                    if (nextDate.getDate() !== originalDay) {
-                        nextDate.setDate(0); // Last day of previous month
-                    }
-
+                    if (nextDate.getDate() !== originalDay) nextDate.setDate(0);
                     const dateStr = nextDate.toISOString().split('T')[0];
-                    
-                    // Check if already exists
                     const exists = state.bills.some(b => b.name === baseBill.name && b.date === dateStr);
-                    
                     if (!exists && nextDate < limitDate) {
-                        state.bills.push({
-                            ...baseBill,
-                            id: Date.now().toString() + Math.random(),
-                            date: dateStr,
-                            originalDate: baseBill.originalDate || baseBill.date,
-                            paid: false
-                        });
+                        state.bills.push({ ...baseBill, id: Date.now().toString() + Math.random(), date: dateStr, originalDate: baseBill.originalDate || baseBill.date, paid: false });
                         added = true;
                     }
                     currentRefDate = nextDate;
                 }
             });
-
             if (added) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         }
 
-        // --- Rendering ---
         function render() {
             const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-
-            // 1. Dashboard
+            const now = new Date(); const currentMonth = now.getMonth(); const currentYear = now.getFullYear();
             document.getElementById('main-balance').innerText = fmt(state.balance);
-
             const pendingBills = state.bills.filter(b => !b.paid);
-            const monthDebt = pendingBills.reduce((acc, b) => {
-                const d = new Date(b.date + 'T00:00:00');
-                return (d.getMonth() === currentMonth && d.getFullYear() === currentYear) ? acc + b.value : acc;
-            }, 0);
-            
+            const monthDebt = pendingBills.reduce((acc, b) => { const d = new Date(b.date + 'T00:00:00'); return (d.getMonth() === currentMonth && d.getFullYear() === currentYear) ? acc + b.value : acc; }, 0);
             document.getElementById('month-debt').innerText = fmt(monthDebt);
-
             const coverage = state.balance - monthDebt;
             const coverageEl = document.getElementById('coverage-status');
             coverageEl.innerText = fmt(coverage);
             coverageEl.className = `text-sm font-bold ${coverage >= 0 ? 'text-emerald-400' : 'text-rose-500'}`;
 
-            // 2. 3-Month Schedule
-            const scheduleContainer = document.getElementById('monthly-schedule');
-            let scheduleHtml = '';
-            
+            const scheduleContainer = document.getElementById('monthly-schedule'); let scheduleHtml = '';
             for (let i = 0; i < 3; i++) {
-                const d = new Date(currentYear, currentMonth + i, 1);
-                const m = d.getMonth();
-                const y = d.getFullYear();
-                const monthName = d.toLocaleDateString('pt-BR', { month: 'short' });
-                
-                const total = pendingBills.reduce((acc, b) => {
-                    const bd = new Date(b.date + 'T00:00:00');
-                    return (bd.getMonth() === m && bd.getFullYear() === y) ? acc + b.value : acc;
-                }, 0);
-
-                scheduleHtml += `
-                    <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl text-center">
-                        <span class="text-[9px] text-zinc-500 uppercase font-bold block mb-1">${monthName}</span>
-                        <span class="text-[11px] font-black text-zinc-200">${fmt(total)}</span>
-                    </div>
-                `;
+                const d = new Date(currentYear, currentMonth + i, 1); const m = d.getMonth(); const y = d.getFullYear(); const monthName = d.toLocaleDateString('pt-BR', { month: 'short' });
+                const total = pendingBills.reduce((acc, b) => { const bd = new Date(b.date + 'T00:00:00'); return (bd.getMonth() === m && bd.getFullYear() === y) ? acc + b.value : acc; }, 0);
+                scheduleHtml += `<div class="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl text-center"><span class="text-[9px] text-zinc-500 uppercase font-bold block mb-1">${monthName}</span><span class="text-[11px] font-black text-zinc-200">${fmt(total)}</span></div>`;
             }
             scheduleContainer.innerHTML = scheduleHtml;
 
-            // 3. Bills List
             let displayBills = [...state.bills];
             if (state.filter === 'pending') displayBills = displayBills.filter(b => !b.paid);
             if (state.filter === 'paid') displayBills = displayBills.filter(b => b.paid);
             displayBills.sort((a, b) => new Date(a.date) - new Date(b.date));
-
             const container = document.getElementById('bills-container');
-            if (displayBills.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-zinc-600 text-sm">Vazio.</div>`;
-            } else {
+            if (displayBills.length === 0) { container.innerHTML = `<div class="text-center py-10 text-zinc-600 text-sm">Vazio.</div>`; } else {
                 container.innerHTML = displayBills.map(bill => {
-                    const billDate = new Date(bill.date + 'T00:00:00');
-                    const isOverdue = !bill.paid && billDate < new Date().setHours(0,0,0,0);
-                    return `
-                        <div class="glass-card p-4 rounded-2xl flex items-center justify-between ${bill.paid ? 'opacity-40' : ''}">
-                            <div class="flex flex-col gap-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-sm ${bill.paid ? 'line-through' : ''}">${bill.name}</span>
-                                    ${bill.recurring ? '<i data-lucide="refresh-cw" class="w-3 h-3 text-blue-400"></i>' : ''}
-                                    ${bill.installments > 1 ? `<span class="text-[9px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">${bill.installmentNum}/${bill.installments}</span>` : ''}
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="text-[11px] ${isOverdue ? 'text-rose-400 font-bold' : 'text-zinc-500'}">${formatDate(bill.date)}</span>
-                                    <span class="text-sm font-black text-emerald-400">${fmt(bill.value)}</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                ${!bill.paid ? `
-                                    <button onclick="payBill('${bill.id}')" class="bg-emerald-600/10 text-emerald-400 border border-emerald-600/20 px-4 py-2 rounded-xl text-xs font-black active:bg-emerald-600 active:text-white transition-all">PAGAR</button>
-                                ` : `
-                                    <i data-lucide="check-circle-2" class="text-zinc-600 w-5 h-5"></i>
-                                `}
-                                <button onclick="deleteBill('${bill.id}')" class="p-2 text-zinc-700 hover:text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                            </div>
-                        </div>
-                    `;
+                    const billDate = new Date(bill.date + 'T00:00:00'); const isOverdue = !bill.paid && billDate < new Date().setHours(0,0,0,0);
+                    return `<div class="glass-card p-4 rounded-2xl flex items-center justify-between ${bill.paid ? 'opacity-40' : ''}"><div class="flex flex-col gap-1"><div class="flex items-center gap-2"><span class="font-bold text-sm ${bill.paid ? 'line-through' : ''}">${bill.name}</span>${bill.recurring ? '<i data-lucide="refresh-cw" class="w-3 h-3 text-blue-400"></i>' : ''}${bill.installments > 1 ? `<span class="text-[9px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">${bill.installmentNum}/${bill.installments}</span>` : ''}</div><div class="flex items-center gap-3"><span class="text-[11px] ${isOverdue ? 'text-rose-400 font-bold' : 'text-zinc-500'}">${formatDate(bill.date)}</span><span class="text-sm font-black text-emerald-400">${fmt(bill.value)}</span></div></div><div class="flex items-center gap-2">${!bill.paid ? `<button onclick="payBill('${bill.id}')" class="bg-emerald-600/10 text-emerald-400 border border-emerald-600/20 px-4 py-2 rounded-xl text-xs font-black active:bg-emerald-600 active:text-white transition-all">PAGAR</button>` : `<i data-lucide="check-circle-2" class="text-zinc-600 w-5 h-5"></i>`}<button onclick="deleteBill('${bill.id}')" class="p-2 text-zinc-700 hover:text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`;
                 }).join('');
-            }
-            lucide.createIcons();
+            } lucide.createIcons();
         }
 
-        // --- UI Helpers ---
-        function setFilter(f) {
-            state.filter = f;
-            ['pending', 'paid', 'all'].forEach(id => {
-                const el = document.getElementById('tab-' + id);
-                el.className = `flex-1 py-3 text-xs font-bold uppercase tracking-widest ${id === f ? 'tab-active' : 'text-zinc-500'}`;
-            });
-            render();
-        }
-
+        function setFilter(f) { state.filter = f; ['pending', 'paid', 'all'].forEach(id => { document.getElementById('tab-' + id).className = `flex-1 py-3 text-xs font-bold uppercase tracking-widest ${id === f ? 'tab-active' : 'text-zinc-500'}`; }); render(); }
         function openBillModal() { document.getElementById('bill-modal').classList.remove('hidden'); document.getElementById('bill-name').focus(); }
         function closeBillModal() { document.getElementById('bill-modal').classList.add('hidden'); }
         function openAporteModal() { document.getElementById('aporte-modal').classList.remove('hidden'); document.getElementById('aporte-value').focus(); }
         function closeAporteModal() { document.getElementById('aporte-modal').classList.add('hidden'); }
 
         document.getElementById('bill-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('bill-name').value;
-            const totalValue = parseFloat(document.getElementById('bill-value').value);
-            const firstDateStr = document.getElementById('bill-date').value;
-            const installments = parseInt(document.getElementById('bill-installments').value);
-            const recurring = document.getElementById('bill-recurring').checked;
-
+            e.preventDefault(); const name = document.getElementById('bill-name').value; const totalValue = parseFloat(document.getElementById('bill-value').value); const firstDateStr = document.getElementById('bill-date').value; const installments = parseInt(document.getElementById('bill-installments').value); const recurring = document.getElementById('bill-recurring').checked;
             if (installments > 1) {
                 const partValue = totalValue / installments;
                 for (let i = 0; i < installments; i++) {
-                    const d = new Date(firstDateStr + 'T00:00:00');
-                    d.setMonth(d.getMonth() + i);
-                    state.bills.push({
-                        id: Date.now().toString() + i,
-                        name: name,
-                        value: partValue,
-                        date: d.toISOString().split('T')[0],
-                        installments: installments,
-                        installmentNum: i + 1,
-                        recurring: false,
-                        paid: false
-                    });
+                    const d = new Date(firstDateStr + 'T00:00:00'); d.setMonth(d.getMonth() + i);
+                    state.bills.push({ id: Date.now().toString() + i, name: name, value: partValue, date: d.toISOString().split('T')[0], installments: installments, installmentNum: i + 1, recurring: false, paid: false });
                 }
-            } else {
-                state.bills.push({
-                    id: Date.now().toString(),
-                    name: name,
-                    value: totalValue,
-                    date: firstDateStr,
-                    installments: 1,
-                    installmentNum: 1,
-                    recurring: recurring,
-                    originalDate: firstDateStr,
-                    paid: false
-                });
-            }
-            save();
-            generateRecurringBills();
-            closeBillModal();
-            e.target.reset();
+            } else { state.bills.push({ id: Date.now().toString(), name: name, value: totalValue, date: firstDateStr, installments: 1, installmentNum: 1, recurring: recurring, originalDate: firstDateStr, paid: false }); }
+            save(); generateRecurringBills(); closeBillModal(); e.target.reset();
         });
 
-        function formatDate(dateStr) {
-            const d = new Date(dateStr + 'T00:00:00');
-            return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-        }
+        function formatDate(dateStr) { const d = new Date(dateStr + 'T00:00:00'); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }); }
 
+        // Ativação correta do Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Provisões Ativo!'))
+                    .catch(err => console.warn('Erro sw:', err));
+            });
+        }
         init();
     </script>
 </body>
 </html>
+
