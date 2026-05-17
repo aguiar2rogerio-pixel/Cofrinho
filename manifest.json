@@ -1,0 +1,16 @@
+{
+  "name": "Provisões Senior v3",
+  "short_name": "Provisões",
+  "start_url": "./provisoes_v3_1.html",
+  "display": "standalone",
+  "background-color": "#09090b",
+  "theme-color": "#09090b",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2489/2489715.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
