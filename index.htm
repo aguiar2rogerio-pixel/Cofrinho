@@ -73,7 +73,7 @@
         <section>
             <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 ml-1">Cronograma de Meses</h3>
             <div id="monthly-schedule" class="grid grid-cols-3 gap-2">
-                </div>
+            </div>
         </section>
 
         <div class="flex border-b border-zinc-800">
@@ -83,7 +83,7 @@
         </div>
 
         <div id="bills-container" class="space-y-3">
-            </div>
+        </div>
 
         <div class="pt-8 pb-4 flex justify-center">
             <button onclick="resetAllData()" class="text-rose-500/60 hover:text-rose-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors">
@@ -156,7 +156,9 @@
 
     <script>
         let state = { balance: 0, bills: [], history: [], filter: 'pending' };
-        const STORAGE_KEY = 'provisoes_v3_1_data';
+        
+        // CHAVE DE MEMÓRIA BLINDADA E EXCLUSIVA DO COFRINHO
+        const STORAGE_KEY = 'dados_cofrinho_blindado_v3';
 
         function init() {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -299,7 +301,6 @@
 
         function formatDate(dateStr) { const d = new Date(dateStr + 'T00:00:00'); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }); }
 
-        // Ativação correta do Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
