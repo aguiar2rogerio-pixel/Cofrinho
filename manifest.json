@@ -1,7 +1,7 @@
 {
   "name": "Provisões Senior v3",
   "short_name": "Provisões",
-  "start_url": "./provisoes_v3_1.html",
+  "start_url": "start_url": "./index.html",
   "display": "standalone",
   "background-color": "#09090b",
   "theme-color": "#09090b",
