@@ -11,9 +11,11 @@
     <meta name="apple-mobile-web-app-title" content="Cofrinho">
     <meta name="theme-color" content="#09090b">
 
- <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Cofrinho%20Inteligente%22,%22short_name%22:%22Cofrinho%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%2309090b%22,%22theme_color%22:%22%2309090b%22,%22icons%22:[{%22src%22:%22https://img.icons8.com/fluent/512/piggy-bank.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
+    <link rel="icon" type="image/png" href="https://img.icons8.com/fluent/512/piggy-bank.png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluent/512/piggy-bank.png">
 
-   
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Cofrinho%20Inteligente%22,%22short_name%22:%22Cofrinho%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%2309090b%22,%22theme_color%22:%22%2309090b%22,%22icons%22:[{%22src%22:%22https://img.icons8.com/fluent/512/piggy-bank.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
+
     <script>
         if ('serviceWorker' in navigator) {
             const swCode = `
@@ -311,7 +313,7 @@
             if (added) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         }
 
-        // --- Mecanismo União Backup e Restore .TXT ---
+        // --- Mecanismo Backup e Restore .TXT ---
         function exportData() {
             const dataStr = JSON.stringify(state, null, 2);
             const blob = new Blob([dataStr], { type: 'text/plain' });
@@ -486,4 +488,3 @@
     </script>
 </body>
 </html>
-
