@@ -3,41 +3,308 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Provisões V3.1 - Senior</title>
+<title>Provisões V3.1 - Senior</title> 
+
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#09090b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> 
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-body { font-family: 'Inter', sans-serif; background-color: #09090b; color: #fafafa; }
+body { font-family: 'Inter', sans-serif; background-color: #09090b; color: #fafafa; -webkit-tap-highlight-color: transparent; }
 .glass-card { background: rgba(24, 24, 27, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(39, 39, 42, 1); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .tab-active { border-bottom: 2px solid #10b981; color: #10b981; }
+.scroll-hide::-webkit-scrollbar { display: none; }
 </style>
 </head>
-<body class="min-h-screen pb-24">
+<body class="min-h-screen pb-24"> 
 
 <header class="sticky top-0 z-30 glass-card p-5 rounded-b-[2.5rem] shadow-2xl mb-6">
-    <div class="flex flex-col items-center text-center">
-        <span class="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Saldo Acumulado</span>
-        <h1 id="main-balance" class="text-4xl font-black text-emerald-400 tracking-tighter">R$ 0,00</h1>
-        <div class="grid grid-cols-2 gap-4 w-full mt-5 pt-4 border-t border-zinc-800">
-            <div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50">
-                <span class="text-zinc-500 text-[9px] uppercase block mb-1">Total do Mês</span>
-                <span id="month-debt" class="text-sm font-bold text-zinc-200">R$ 0,00</span>
-            </div>
-            <div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50">
-                <span class="text-zinc-500 text-[9px] uppercase block mb-1">Falta para Quitar</span>
-                <span id="coverage-status" class="text-sm font-bold">R$ 0,00</span>
-            </div>
-        </div>
-    </div>
-</header>
+<div class="flex flex-col items-center text-center">
+<span class="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Saldo Acumulado</span>
+<h1 id="main-balance" class="text-4xl font-black text-emerald-400 tracking-tighter">R$` 0,00</h1> 
+
+<div class="grid grid-cols-2 gap-4 w-full mt-5 pt-4 border-t border-zinc-800">
+<div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50">
+<span class="text-zinc-500 text-[9px] uppercase block mb-1">Total do Mês</span>
+<span id="month-debt" class="text-sm font-bold text-zinc-200">R$ 0,00&lt;/span&gt; &lt;/div&gt; &lt;div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50"&gt; &lt;span class="text-zinc-500 text-[9px] uppercase block mb-1"&gt;Falta para Quitar&lt;/span&gt; &lt;span id="coverage-status" class="text-sm font-bold"&gt;R$ 0,00</span>
+</div>
+</div>
+</div>
+</header> 
 
 <main class="px-4 space-y-6">
-    <section class="glass-card p-4 rounded-3xl flex justify-around">
-        <button onclick="exportData()" class="text-emerald-500 hover:text-emerald-400 text-[10px] font-bold uppercase tracking-widest flex flex-col items-center gap-1">
-            <i data-lucide="download" class="w-5 h-5"></i> Backup
-        </button>
-        <label class="text-blue-500 hover:text-blue-400 text-[10px] font-bold uppercase tracking-widest flex flex-col items-center gap-1 cursor-pointer">
-            <i data-lucide="upload" class="w-5
+<section class="glass-card p-4 rounded-3xl">
+<div class="flex items-center justify-between mb-3">
+<h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Depósito Diário</h3>
+<span id="today-date" class="text-[10px] text-zinc-500"></span>
+</div>
+<div class="flex gap-3">
+<div class="relative flex-1">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">R`$</span>
+<input type="number" id="daily-input" value="7.00" step="0.50" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl py-3 pl-10 pr-4 text-lg font-bold focus:border-emerald-500 transition-all outline-none">
+</div>
+<button onclick="confirmDailyDeposit()" id="btn-daily" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all px-6 rounded-2xl font-bold flex items-center gap-2">
+<i data-lucide="check-circle" class="w-5 h-5"></i>
+</button>
+</div>
+</section> 
+
+<div class="grid grid-cols-2 gap-3">
+<button onclick="openAporteModal()" class="flex items-center justify-center gap-2 p-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl border border-zinc-700 transition-all active:scale-95">
+<i data-lucide="arrow-up-circle" class="text-blue-400 w-5 h-5"></i>
+<span class="font-bold text-sm">Aporte</span>
+</button>
+<button onclick="openBillModal()" class="flex items-center justify-center gap-2 p-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl border border-zinc-700 transition-all active:scale-95">
+<i data-lucide="plus-square" class="text-emerald-400 w-5 h-5"></i>
+<span class="font-bold text-sm">Nova Conta</span>
+</button>
+</div> 
+
+<section>
+<h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 ml-1">Cronograma de Meses</h3>
+<div id="monthly-schedule" class="grid grid-cols-3 gap-2">
+</div>
+</section> 
+
+<div class="flex border-b border-zinc-800">
+<button onclick="setFilter('pending')" id="tab-pending" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest tab-active">Pendentes</button>
+<button onclick="setFilter('paid')" id="tab-paid" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-zinc-500">Pagas</button>
+<button onclick="setFilter('all')" id="tab-all" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-zinc-500">Tudo</button>
+</div> 
+
+<div id="bills-container" class="space-y-3">
+</div> 
+
+<div class="pt-8 pb-4 flex justify-center">
+<button onclick="resetAllData()" class="text-rose-500/60 hover:text-rose-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors">
+<i data-lucide="trash-2" class="w-3 h-3"></i>
+Limpar Todos os Dados
+</button>
+</div>
+</main> 
+
+<div id="bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+<div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl animate-in slide-in-from-bottom duration-300">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-xl font-bold">Lançar Compromisso</h3>
+<button onclick="closeBillModal()" class="p-2 text-zinc-500"><i data-lucide="x"></i></button>
+</div>
+<form id="bill-form" class="space-y-4">
+<input type="text" id="bill-name" required placeholder="Nome (Ex: Mercado, Aluguel...)" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white focus:border-emerald-500 outline-none"> 
+
+<div class="grid grid-cols-2 gap-4">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">R$`</span>
+<input type="number" id="bill-value" step="0.01" required placeholder="Valor Total" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 pl-8 text-white focus:border-emerald-500 outline-none">
+</div>
+<input type="date" id="bill-date" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white focus:border-emerald-500 outline-none">
+</div> 
+
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-[10px] text-zinc-500 uppercase mb-1 ml-1">Parcelas</label>
+<select id="bill-installments" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white outline-none">
+<option value="1">À vista</option>
+<option value="2">2x</option>
+<option value="3">3x</option>
+<option value="4">4x</option>
+<option value="5">5x</option>
+<option value="6">6x</option>
+<option value="10">10x</option>
+<option value="12">12x</option>
+<option value="24">24x</option>
+</select>
+</div>
+<div class="flex items-end pb-1">
+<label class="flex items-center gap-2 cursor-pointer">
+<input type="checkbox" id="bill-recurring" class="w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-emerald-600 focus:ring-0">
+<span class="text-xs text-zinc-400">Conta Fixa (Mensal)</span>
+</label>
+</div>
+</div> 
+
+<button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl mt-4 shadow-lg shadow-emerald-900/20 transition-all active:scale-95">
+SALVAR LANÇAMENTO
+</button>
+</form>
+</div>
+</div> 
+
+<div id="aporte-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+<div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-6 border border-zinc-800 shadow-2xl">
+<h3 class="text-lg font-bold mb-4 text-center">Realizar Aporte</h3>
+<div class="relative mb-4">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-bold">R`$</span>
+<input type="number" id="aporte-value" step="0.01" placeholder="0,00" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl p-4 pl-10 text-2xl font-black text-emerald-400 text-center outline-none">
+</div>
+<div class="flex gap-2">
+<button onclick="closeAporteModal()" class="flex-1 bg-zinc-800 py-4 rounded-xl font-bold text-zinc-400">Sair</button>
+<button onclick="confirmAporte()" class="flex-1 bg-blue-600 py-4 rounded-xl font-bold text-white">Aportar</button>
+</div>
+</div>
+</div> 
+
+<script>
+let state = { balance: 0, bills: [], history: [], filter: 'pending' }; 
+
+// CHAVE DE MEMÓRIA BLINDADA E EXCLUSIVA DO COFRINHO
+const STORAGE_KEY = 'dados_cofrinho_blindado_v3'; 
+
+function init() {
+const saved = localStorage.getItem(STORAGE_KEY);
+if (saved) state = JSON.parse(saved);
+const today = new Date();
+document.getElementById('today-date').innerText = today.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+checkTodayDeposit();
+generateRecurringBills();
+render();
+} 
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); } 
+
+function confirmDailyDeposit() {
+const amount = parseFloat(document.getElementById('daily-input').value);
+const todayStr = new Date().toISOString().split('T')[0];
+state.balance += amount;
+state.history.push({ date: todayStr, amount: amount });
+save();
+checkTodayDeposit();
+} 
+
+function checkTodayDeposit() {
+const todayStr = new Date().toISOString().split('T')[0];
+const alreadyDone = state.history.some(h => h.date === todayStr);
+const btn = document.getElementById('btn-daily');
+const input = document.getElementById('daily-input');
+if (alreadyDone) {
+btn.classList.replace('bg-emerald-600', 'bg-zinc-700');
+btn.innerHTML = '<i data-lucide="check" class="text-emerald-400"></i>';
+input.disabled = true;
+input.classList.add('opacity-50');
+} else {
+btn.classList.replace('bg-zinc-700', 'bg-emerald-600');
+btn.innerHTML = '<i data-lucide="check-circle"></i>';
+input.disabled = false;
+input.classList.remove('opacity-50');
+}
+lucide.createIcons();
+} 
+
+function confirmAporte() {
+const val = parseFloat(document.getElementById('aporte-value').value);
+if (val > 0) { state.balance += val; save(); closeAporteModal(); document.getElementById('aporte-value').value = ''; }
+} 
+
+function payBill(id) {
+const bill = state.bills.find(b => b.id === id);
+if (bill && !bill.paid) {
+if (state.balance >= bill.value) {
+state.balance -= bill.value;
+bill.paid = true;
+if (bill.recurring) generateRecurringBills();
+save();
+} else { alert('Saldo insuficiente no cofrinho!'); }
+}
+} 
+
+function deleteBill(id) { if (confirm('Excluir este lançamento?')) { state.bills = state.bills.filter(b => b.id !== id); save(); } }
+function resetAllData() { if (confirm('ATENÇÃO: Isso apagará todos os seus dados permanentemente. Confirmar?')) { localStorage.removeItem(STORAGE_KEY); location.reload(); } } 
+
+function generateRecurringBills() {
+const now = new Date();
+const windowMonths = 3;
+let added = false;
+state.bills.filter(b => b.recurring).forEach(baseBill => {
+const instances = state.bills.filter(b => b.name === baseBill.name && b.recurring);
+instances.sort((a, b) => new Date(b.date) - new Date(a.date));
+const latest = instances[0];
+let currentRefDate = new Date(latest.date + 'T00:00:00');
+const originalDay = new Date(baseBill.originalDate || baseBill.date + 'T00:00:00').getDate();
+const limitDate = new Date(now.getFullYear(), now.getMonth() + windowMonths, 1);
+while (currentRefDate < limitDate) {
+let nextDate = new Date(currentRefDate);
+nextDate.setMonth(nextDate.getMonth() + 1);
+nextDate.setDate(originalDay);
+if (nextDate.getDate() !== originalDay) nextDate.setDate(0);
+const dateStr = nextDate.toISOString().split('T')[0];
+const exists = state.bills.some(b => b.name === baseBill.name && b.date === dateStr);
+if (!exists && nextDate < limitDate) {
+state.bills.push({ ...baseBill, id: Date.now().toString() + Math.random(), date: dateStr, originalDate: baseBill.originalDate || baseBill.date, paid: false });
+added = true;
+}
+currentRefDate = nextDate;
+}
+});
+if (added) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+} 
+
+function render() {
+const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+const now = new Date(); const currentMonth = now.getMonth(); const currentYear = now.getFullYear();
+document.getElementById('main-balance').innerText = fmt(state.balance);
+const pendingBills = state.bills.filter(b => !b.paid);
+const monthDebt = pendingBills.reduce((acc, b) => { const d = new Date(b.date + 'T00:00:00'); return (d.getMonth() === currentMonth && d.getFullYear() === currentYear) ? acc + b.value : acc; }, 0);
+document.getElementById('month-debt').innerText = fmt(monthDebt);
+const coverage = state.balance - monthDebt;
+const coverageEl = document.getElementById('coverage-status');
+coverageEl.innerText = fmt(coverage);
+coverageEl.className = text-sm font-bold ${coverage >= 0 ? 'text-emerald-400' : 'text-rose-500'}`; 
+
+const scheduleContainer = document.getElementById('monthly-schedule'); let scheduleHtml = '';
+for (let i = 0; i < 3; i++) {
+const d = new Date(currentYear, currentMonth + i, 1); const m = d.getMonth(); const y = d.getFullYear(); const monthName = d.toLocaleDateString('pt-BR', { month: 'short' });
+const total = pendingBills.reduce((acc, b) => { const bd = new Date(b.date + 'T00:00:00'); return (bd.getMonth() === m && bd.getFullYear() === y) ? acc + b.value : acc; }, 0);
+scheduleHtml += <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl text-center"&gt;&lt;span class="text-[9px] text-zinc-500 uppercase font-bold block mb-1"&gt;${monthName}</span><span class="text-[11px] font-black text-zinc-200">${fmt(total)}&lt;/span&gt;&lt;/div>;
+}
+scheduleContainer.innerHTML = scheduleHtml; 
+
+let displayBills = [...state.bills];
+if (state.filter === 'pending') displayBills = displayBills.filter(b => !b.paid);
+if (state.filter === 'paid') displayBills = displayBills.filter(b => b.paid);
+displayBills.sort((a, b) => new Date(a.date) - new Date(b.date));
+const container = document.getElementById('bills-container');
+if (displayBills.length === 0) { container.innerHTML = <div class="text-center py-10 text-zinc-600 text-sm"&gt;Vazio.&lt;/div>; } else {
+container.innerHTML = displayBills.map(bill => {
+const billDate = new Date(bill.date + 'T00:00:00'); const isOverdue = !bill.paid && billDate < new Date().setHours(0,0,0,0);
+return <div class="glass-card p-4 rounded-2xl flex items-center justify-between${bill.paid ? 'opacity-40' : ''}"><div class="flex flex-col gap-1"><div class="flex items-center gap-2"><span class="font-bold text-sm {bill.name}</span>{bill.installments > 1 ? <span class="text-[9px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400"&gt;${bill.installmentNum}/${bill.installments}&lt;/span> : ''}</div><div class="flex items-center gap-3"><span class="text-[11px] {formatDate(bill.date)}</span><span class="text-sm font-black text-emerald-400">{!bill.paid ? <button onclick="payBill('${bill.id}')" class="bg-emerald-600/10 text-emerald-400 border border-emerald-600/20 px-4 py-2 rounded-xl text-xs font-black active:bg-emerald-600 active:text-white transition-all">PAGAR</button>:<i data-lucide="check-circle-2" class="text-zinc-600 w-5 h-5"></i>}&lt;button onclick="deleteBill('${bill.id}')" class="p-2 text-zinc-700 hover:text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`;
+}).join('');
+} lucide.createIcons();
+} 
+
+function setFilter(f) { state.filter = f; ['pending', 'paid', 'all'].forEach(id => { document.getElementById('tab-' + id).className = flex-1 py-3 text-xs font-bold uppercase tracking-widest ${id === f ? 'tab-active' : 'text-zinc-500'}; }); render(); }
+function openBillModal() { document.getElementById('bill-modal').classList.remove('hidden'); document.getElementById('bill-name').focus(); }
+function closeBillModal() { document.getElementById('bill-modal').classList.add('hidden'); }
+function openAporteModal() { document.getElementById('aporte-modal').classList.remove('hidden'); document.getElementById('aporte-value').focus(); }
+function closeAporteModal() { document.getElementById('aporte-modal').classList.add('hidden'); } 
+
+document.getElementById('bill-form').addEventListener('submit', (e) => {
+e.preventDefault(); const name = document.getElementById('bill-name').value; const totalValue = parseFloat(document.getElementById('bill-value').value); const firstDateStr = document.getElementById('bill-date').value; const installments = parseInt(document.getElementById('bill-installments').value); const recurring = document.getElementById('bill-recurring').checked;
+if (installments > 1) {
+const partValue = totalValue / installments;
+for (let i = 0; i < installments; i++) {
+const d = new Date(firstDateStr + 'T00:00:00'); d.setMonth(d.getMonth() + i);
+state.bills.push({ id: Date.now().toString() + i, name: name, value: partValue, date: d.toISOString().split('T')[0], installments: installments, installmentNum: i + 1, recurring: false, paid: false });
+}
+} else { state.bills.push({ id: Date.now().toString(), name: name, value: totalValue, date: firstDateStr, installments: 1, installmentNum: 1, recurring: recurring, originalDate: firstDateStr, paid: false }); }
+save(); generateRecurringBills(); closeBillModal(); e.target.reset();
+}); 
+
+function formatDate(dateStr) { const d = new Date(dateStr + 'T00:00:00'); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }); } 
+
+if ('serviceWorker' in navigator) {
+window.addEventListener('load', () => {
+navigator.serviceWorker.register('./sw.js')
+.then(reg => console.log('PWA Provisões Ativo!'))
+.catch(err => console.warn('Erro sw:', err));
+});
+}
+init();
+</script>
+</body>
+    </html>
