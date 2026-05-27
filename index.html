@@ -101,7 +101,7 @@
         <section>
             <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 ml-1">Cronograma de Meses</h3>
             <div id="monthly-schedule" class="grid grid-cols-3 gap-2">
-                </div>
+            </div>
         </section>
 
         <div class="flex border-b border-zinc-800">
@@ -111,7 +111,7 @@
         </div>
 
         <div id="bills-container" class="space-y-3">
-            </div>
+        </div>
 
         <section class="glass-card p-4 rounded-3xl space-y-3">
             <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Segurança dos Dados</h3>
@@ -136,7 +136,7 @@
         </div>
     </main>
 
-    <!-- Modal: Nova/Editar Conta -->
+    <!-- Modal: Nova Conta (Apenas Criação) -->
     <div id="bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl">
             <div class="flex justify-between items-center mb-6">
@@ -226,11 +226,11 @@
         </div>
     </div>
 
-    <!-- Modal: Editar Lançamento -->
+    <!-- Modal: Editar / Excluir Lançamento Isolado (Estilo Blindado) -->
     <div id="edit-bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold">Editar Lançamento</h3>
+                <h3 class="text-xl font-bold text-emerald-400">Editar Lançamento</h3>
                 <button onclick="closeEditBillModal()" class="p-2 text-zinc-500"><i data-lucide="x"></i></button>
             </div>
             <form id="edit-bill-form" class="space-y-4">
@@ -243,17 +243,25 @@
                     </div>
                     <input type="date" id="edit-bill-date" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white focus:border-emerald-500 outline-none">
                 </div>
-                <div id="edit-bill-installments-info" class="text-[11px] text-zinc-400 bg-zinc-800/50 p-3 rounded-xl"></div>
+                <div id="edit-bill-installments-info" class="text-[11px] text-zinc-400 bg-zinc-800/50 p-3 rounded-xl min-h-[20px]"></div>
                 <div class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="edit-bill-recurring" class="w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-emerald-600 focus:ring-0">
                     <label for="edit-bill-recurring" class="text-xs text-zinc-400">Conta Fixa (Mensal)</label>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-900/20 transition-all active:scale-95">
-                        SALVAR
-                    </button>
-                    <button type="button" onclick="closeEditBillModal()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95">
-                        CANCELAR
+                
+                <!-- Estrutura Unificada de Ações de Acordo com as Novas Regras de Negócio -->
+                <div class="flex flex-col gap-2 pt-2">
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-900/20 transition-all active:scale-95 uppercase text-sm tracking-wider">
+                            SALVAR
+                        </button>
+                        <button type="button" onclick="closeEditBillModal()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 uppercase text-sm tracking-wider">
+                            CANCELAR
+                        </button>
+                    </div>
+                    <!-- Exclusão em Ambiente Controlado Próprio -->
+                    <button type="button" onclick="deleteBillFromModal()" class="w-full bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-200 hover:text-white font-bold py-3 rounded-xl transition-all uppercase text-xs tracking-wider mt-2">
+                        🗑️ Excluir este Lançamento
                     </button>
                 </div>
             </form>
@@ -291,9 +299,11 @@
         // --- Depósito Diário ---
         function confirmDailyDeposit() {
             const amount = parseFloat(document.getElementById('daily-input').value);
+            if(isNaN(amount) || amount <= 0) return;
             const todayStr = new Date().toISOString().split('T')[0];
             state.balance += amount;
             state.history.push({ date: todayStr, amount: amount });
+            document.getElementById('daily-input').value = '';
             save();
             checkTodayDeposit();
         }
@@ -327,13 +337,13 @@
             const btn = document.getElementById('btn-daily');
             const input = document.getElementById('daily-input');
             if (alreadyDone) {
-                btn.classList.replace('bg-emerald-600', 'bg-zinc-700');
-                btn.innerHTML = '<i data-lucide="check" class="text-emerald-400"></i>';
+                btn.className = "bg-zinc-700 px-6 rounded-2xl font-bold flex items-center gap-2 transition-all";
+                btn.innerHTML = '<i data-lucide="check" class="text-emerald-400 w-5 h-5"></i>';
                 input.disabled = true;
                 input.classList.add('opacity-50');
             } else {
-                btn.classList.replace('bg-zinc-700', 'bg-emerald-600');
-                btn.innerHTML = '<i data-lucide="check-circle"></i>';
+                btn.className = "bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all px-6 rounded-2xl font-bold flex items-center gap-2";
+                btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i>';
                 input.disabled = false;
                 input.classList.remove('opacity-50');
             }
@@ -370,29 +380,47 @@
             }
         }
 
-        function deleteBill(id) {
-            if (confirm('Excluir este lançamento?')) {
-                const bill = state.bills.find(b => b.id === id);
-                if (bill && bill.installments > 1) {
-                    const relatedBills = state.bills.filter(b => 
-                        b.name === bill.name && 
-                        b.installments === bill.installments &&
-                        b.date >= bill.date
-                    );
-                    if (relatedBills.length > 1) {
-                        if (confirm('Este lançamento faz parte de um parcelamento. Deseja excluir todas as parcelas relacionadas?')) {
-                            state.bills = state.bills.filter(b => !relatedBills.includes(b));
-                        } else {
-                            state.bills = state.bills.filter(b => b.id !== id);
-                        }
+        // Nova Função de Exclusão Controlada por Níveis (Roda apenas de dentro da Janela Protetora)
+        function deleteBillFromModal() {
+            if (!editingBillId) return;
+            
+            const bill = state.bills.find(b => b.id === editingBillId);
+            if (!bill) return;
+
+            // NÍVEL 1: Confirmação Inicial Segura
+            if (!confirm('Excluir este lançamento?')) {
+                return; // Clicou em Cancelar: interrompe na hora sem afetar nada
+            }
+
+            // NÍVEL 2: Tratamento de Regras para Parcelados
+            if (bill.installments > 1) {
+                // Filtra as parcelas futuras que possuem a mesma assinatura lógica de origem
+                const relatedBills = state.bills.filter(b => 
+                    b.name === bill.name && 
+                    b.installments === bill.installments &&
+                    b.date >= bill.date
+                );
+
+                if (relatedBills.length > 1) {
+                    const deleteRelated = confirm('Este lançamento faz parte de um parcelamento. Deseja excluir todas as parcelas relacionadas?\n\n[OK] = Deletar Todas\n[Cancelar] = Deletar Apenas Esta');
+                    
+                    if (deleteRelated) {
+                        // Remove o grupo inteiro correspondente
+                        state.bills = state.bills.filter(b => !relatedBills.includes(b));
                     } else {
-                        state.bills = state.bills.filter(b => b.id !== id);
+                        // Deleta apenas a parcela aberta no visor
+                        state.bills = state.bills.filter(b => b.id !== editingBillId);
                     }
                 } else {
-                    state.bills = state.bills.filter(b => b.id !== id);
+                    state.bills = state.bills.filter(b => b.id !== editingBillId);
                 }
-                save();
+            } else {
+                // Registro Comum Simples
+                state.bills = state.bills.filter(b => b.id !== editingBillId);
             }
+
+            save();
+            closeEditBillModal();
         }
 
         function openEditBillModal(id) {
@@ -430,14 +458,13 @@
             const oldName = bill.name;
             const oldValue = bill.value;
             const oldDate = bill.date;
-            const oldRecurring = bill.recurring;
 
             bill.name = document.getElementById('edit-bill-name').value;
             bill.value = parseFloat(document.getElementById('edit-bill-value').value);
             bill.date = document.getElementById('edit-bill-date').value;
             bill.recurring = document.getElementById('edit-bill-recurring').checked;
 
-            // Se é parcelado, atualizar todas as parcelas relacionadas
+            // Se for parcelado, atualiza em cascata o restante das parcelas vinculadas
             if (bill.installments > 1) {
                 const relatedBills = state.bills.filter(b => 
                     b.name === oldName && 
@@ -605,8 +632,8 @@
                                 ` : `
                                     <i data-lucide="check-circle-2" class="text-zinc-600 w-5 h-5"></i>
                                 `}
-                                <button onclick="openEditBillModal('${bill.id}')" class="p-2 text-zinc-700 hover:text-blue-400"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                                <button onclick="deleteBill('${bill.id}')" class="p-2 text-zinc-700 hover:text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                <!-- Removido botão direto de Lixeira para garantir Isolamento e Segurança de Escopo -->
+                                <button onclick="openEditBillModal('${bill.id}')" class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
                             </div>
                         </div>
                     `;
@@ -615,6 +642,7 @@
             lucide.createIcons();
         }
 
+        // --- Filtros e Controles de Visão ---
         function setFilter(f) {
             state.filter = f;
             ['pending', 'paid', 'all'].forEach(id => {
@@ -631,10 +659,12 @@
             document.getElementById('bill-form').reset();
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('bill-launch-date').value = today;
+            document.getElementById('bill-date').value = today;
             document.getElementById('bill-modal').classList.remove('hidden'); 
             document.getElementById('bill-name').focus(); 
         }
         function closeBillModal() { document.getElementById('bill-modal').classList.add('hidden'); }
+        
         function openAporteModal() { 
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('aporte-date').value = today;
@@ -651,13 +681,14 @@
             const launchDateStr = document.getElementById('bill-launch-date').value;
             const installments = parseInt(document.getElementById('bill-installments').value);
             const recurring = document.getElementById('bill-recurring').checked;
+            
             if (installments > 1) {
                 const partValue = totalValue / installments;
                 for (let i = 0; i < installments; i++) {
                     const d = new Date(firstDateStr + 'T00:00:00');
                     d.setMonth(d.getMonth() + i);
                     state.bills.push({
-                        id: Date.now().toString() + i,
+                        id: Date.now().toString() + i + Math.random().toString(36).substr(2, 5),
                         name: name,
                         value: partValue,
                         date: d.toISOString().split('T')[0],
@@ -670,7 +701,7 @@
                 }
             } else {
                 state.bills.push({
-                    id: Date.now().toString(),
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
                     name: name,
                     value: totalValue,
                     date: firstDateStr,
@@ -697,3 +728,4 @@
     </script>
 </body>
 </html>
+
