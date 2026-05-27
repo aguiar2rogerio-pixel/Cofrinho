@@ -5,25 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cofrinho Inteligente</title>
     
+    <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Cofrinho">
     <meta name="theme-color" content="#09090b">
-
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Cofrinho%20Inteligente%22,%22short_name%22:%22Cofrinho%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%2309090b%22,%22theme_color%22:%22%2309090b%22,%22icons%22:[{%22src%22:%22https://cdn-icons-png.flaticon.com/512/2343/2343330.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
-
+    <meta name="description" content="Aplicativo inteligente de gestão de poupança e controle de contas">
+    
+    <!-- Manifest PWA externo -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Ícones para diferentes plataformas -->
+    <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="icon-512.png" sizes="512x512">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('install', e => self.skipWaiting());
-                self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-                self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
-            `;
-            const blob = new Blob([swCode], { type: 'application/javascript' });
-            navigator.serviceWorker.register(URL.createObjectURL(blob), { scope: './' })
-                .then(() => console.log('Instalação inteligente ativada!'))
-                .catch(err => console.log('Erro PWA:', err));
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then((registration) => {
+                        console.log('[PWA] Service Worker registrado com sucesso:', registration);
+                    })
+                    .catch((error) => {
+                        console.error('[PWA] Erro ao registrar Service Worker:', error);
+                    });
+            });
+        } else {
+            console.warn('[PWA] Service Worker não suportado neste navegador');
         }
     </script>
 
