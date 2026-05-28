@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cofrinho Inteligente</title>
     
-    <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,15 +12,12 @@
     <meta name="theme-color" content="#09090b">
     <meta name="description" content="Aplicativo inteligente de gestão de poupança e controle de contas">
     
-    <!-- Manifest PWA externo -->
     <link rel="manifest" href="manifest.json">
     
-    <!-- Ícones para diferentes plataformas -->
     <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
     <link rel="icon" type="image/png" href="icon-512.png" sizes="512x512">
     <link class="apple-touch-icon" href="icon-192.png">
     
-    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -136,7 +132,6 @@
         </div>
     </main>
 
-    <!-- Modal: Nova Conta -->
     <div id="bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl">
             <div class="flex justify-between items-center mb-6">
@@ -188,7 +183,6 @@
         </div>
     </div>
 
-    <!-- Modal: Aporte -->
     <div id="aporte-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-6 border border-zinc-800 shadow-2xl">
             <h3 class="text-lg font-bold mb-4 text-center">Realizar Aporte</h3>
@@ -207,7 +201,6 @@
         </div>
     </div>
 
-    <!-- Modal: Editar / Excluir Lançamento (Estilo Blindado) -->
     <div id="edit-bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -239,7 +232,6 @@
                             CANCELAR
                         </button>
                     </div>
-                    <!-- Exclusão Isolada de Segurança -->
                     <button type="button" onclick="deleteBillFromModal()" class="w-full bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-200 hover:text-white font-bold py-3 rounded-xl transition-all uppercase text-xs tracking-wider mt-2">
                         🗑️ Excluir este Lançamento
                     </button>
@@ -275,16 +267,27 @@
             render();
         }
 
-        // --- Depósito Diário (Com o Feedback visual agressivo) ---
+        // --- Depósito Diário (CORRIGIDO) ---
         function confirmDailyDeposit() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const alreadyDone = state.history.some(h => h.date === todayStr);
+            
+            // PROTEÇÃO: Se já foi feito hoje, não faz nada
+            if (alreadyDone) return;
+
             const amount = parseFloat(document.getElementById('daily-input').value);
             if(isNaN(amount) || amount <= 0) return;
-            const todayStr = new Date().toISOString().split('T')[0];
+            
             state.balance += amount;
             state.history.push({ date: todayStr, amount: amount });
+            
+            // Salva os dados primeiro
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            
+            // Depois limpa o input e atualiza os elementos visuais
             document.getElementById('daily-input').value = '';
-            save();
             checkTodayDeposit();
+            render();
         }
 
         function checkTodayDeposit() {
@@ -294,8 +297,9 @@
             const input = document.getElementById('daily-input');
             
             if (alreadyDone) {
-                // Estado Travado: Mensagem explícita e estilizada de sucesso
-                btn.className = "bg-zinc-800 px-6 rounded-2xl font-bold flex items-center gap-2 transition-all border border-zinc-700 text-emerald-400";
+                // Estado Travado Total: Desabilita input E botão para evitar bugs de cliques
+                btn.disabled = true;
+                btn.className = "bg-zinc-800 px-6 rounded-2xl font-bold flex items-center gap-2 border border-zinc-800 text-emerald-500/40 cursor-not-allowed";
                 btn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i>';
                 
                 input.disabled = true;
@@ -303,7 +307,8 @@
                 input.placeholder = "JÁ DEPOSITADO HOJE!"; 
                 input.className = "w-full bg-zinc-950/80 border border-zinc-800 rounded-2xl py-3 pl-10 pr-4 text-sm font-bold text-emerald-500/50 transition-all outline-none text-center select-none";
             } else {
-                // Estado Aberto: Padrão pronto para digitação
+                // Estado Aberto Normal
+                btn.disabled = false;
                 btn.className = "bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all px-6 rounded-2xl font-bold flex items-center gap-2";
                 btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i>';
                 
@@ -344,19 +349,19 @@
             }
         }
 
-        // Exclusão Controlada de Dentro do Modal[span_2](start_span)[span_2](end_span)
+        // Exclusão Controlada de Dentro do Modal
         function deleteBillFromModal() {
             if (!editingBillId) return;
             
             const bill = state.bills.find(b => b.id === editingBillId);
             if (!bill) return;
 
-            // Confirmação Nível 1[span_3](start_span)[span_3](end_span)
+            // Confirmação Nível 1
             if (!confirm('Excluir este lançamento?')) {
-                return; // Cancelado com sucesso sem alterar o banco de dados[span_4](start_span)[span_4](end_span)
+                return;
             }
 
-            // Confirmação Nível 2 (Parcelados)[span_5](start_span)[span_5](end_span)
+            // Confirmação Nível 2 (Parcelados)
             if (bill.installments > 1) {
                 const relatedBills = state.bills.filter(b => 
                     b.name === bill.name && 
@@ -691,5 +696,4 @@
         init();
     </script>
 </body>
-</html>
-
+                        </html>
