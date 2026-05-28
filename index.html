@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cofrinho Inteligente</title>
+    <title>Cofrinho Inteligente v1.5</title>
     
+    <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,12 +13,15 @@
     <meta name="theme-color" content="#09090b">
     <meta name="description" content="Aplicativo inteligente de gestão de poupança e controle de contas">
     
+    <!-- Manifest PWA externo -->
     <link rel="manifest" href="manifest.json">
     
+    <!-- Ícones para diferentes plataformas -->
     <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
     <link rel="icon" type="image/png" href="icon-512.png" sizes="512x512">
     <link class="apple-touch-icon" href="icon-192.png">
     
+    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -29,8 +33,6 @@
                         console.error('[PWA] Erro ao registrar Service Worker:', error);
                     });
             });
-        } else {
-            console.warn('[PWA] Service Worker não suportado neste navegador');
         }
     </script>
 
@@ -55,30 +57,44 @@
             
             <div class="grid grid-cols-2 gap-4 w-full mt-5 pt-4 border-t border-zinc-800">
                 <div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50">
-                    <span class="text-zinc-500 text-[9px] uppercase block mb-1">Total do Mês</span>
+                    <span class="text-zinc-500 text-[9px] uppercase block mb-1">Em Aberto</span>
                     <span id="month-debt" class="text-sm font-bold text-zinc-200">R$ 0,00</span>
                 </div>
-                <div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50">
-                    <span class="text-zinc-500 text-[9px] uppercase block mb-1">Falta para Quitar</span>
-                    <span id="coverage-status" class="text-sm font-bold">R$ 0,00</span>
+                <div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50 flex flex-col justify-center items-center">
+                    <span class="text-zinc-500 text-[9px] uppercase block mb-1">Cobertura</span>
+                    <span id="coverage-status" class="text-sm font-bold block">R$ 0,00</span>
+                    <span id="coverage-badge" class="text-[8px] font-bold uppercase tracking-wider block mt-0.5"></span>
                 </div>
             </div>
         </div>
     </header>
 
     <main class="px-4 space-y-6">
+        <!-- Depósito Diário e Pílulas de Auditoria -->
         <section class="glass-card p-4 rounded-3xl">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Depósito Diário</h3>
                 <span id="today-date" class="text-[10px] text-zinc-500"></span>
             </div>
-            <div class="flex gap-3">
+            <div class="flex gap-3 mb-3">
                 <div class="relative flex-1">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">R$</span>
                     <input type="number" id="daily-input" placeholder="0,00" step="0.50" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl py-3 pl-10 pr-4 text-lg font-bold focus:border-emerald-500 transition-all outline-none">
                 </div>
                 <button onclick="confirmDailyDeposit()" id="btn-daily" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all px-6 rounded-2xl font-bold flex items-center gap-2">
                     <i data-lucide="check-circle" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Pílulas de Conciliação baseadas nas referências visuais -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="openDepositHistoryModal('current')" class="bg-zinc-900/80 border border-zinc-800 p-2 rounded-xl text-left hover:bg-zinc-800 transition-colors">
+                    <span class="text-[8px] text-zinc-500 uppercase font-bold block">Entradas do Mês</span>
+                    <span id="pill-current-month" class="text-xs font-bold text-emerald-400">R$ 0,00</span>
+                </button>
+                <button onclick="openDepositHistoryModal('previous')" class="bg-zinc-900/80 border border-zinc-800 p-2 rounded-xl text-left hover:bg-zinc-800 transition-colors">
+                    <span class="text-[8px] text-zinc-500 uppercase font-bold block">Mês Anterior</span>
+                    <span id="pill-prev-month" class="text-xs font-bold text-zinc-400">R$ 0,00</span>
                 </button>
             </div>
         </section>
@@ -106,13 +122,21 @@
             <button onclick="setFilter('all')" id="tab-all" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-zinc-500">Tudo</button>
         </div>
 
-        <div id="bills-container" class="space-y-3">
+        <!-- Container de Compromissos com Controle Anti-Pergaminho -->
+        <div class="space-y-3">
+            <div id="bills-container" class="space-y-3"></div>
+            <div id="see-more-container" class="hidden text-center pt-1">
+                <button onclick="toggleSeeAll()" id="btn-see-more" class="w-full py-3 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-400 flex items-center justify-center gap-2 transition-all">
+                    <span>Ver Mais Compromissos</span>
+                    <i data-lucide="chevron-down" id="icon-see-more" class="w-4 h-4"></i>
+                </button>
+            </div>
         </div>
 
         <section class="glass-card p-4 rounded-3xl space-y-3">
             <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Segurança dos Dados</h3>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="exportData()" class="flex items-center justify-center gap-2 py-3 bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 active:scale-95 transition-all text-xs font-bold text-zinc-200">
+                <button onclick="exportData()" class="flex items-center justify-center gap-2 py-3 bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 active:scale-95 transition-all text-xs font-bold text-zinc-200 rounded-xl">
                     <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
                     Fazer Backup
                 </button>
@@ -132,6 +156,24 @@
         </div>
     </main>
 
+    <!-- Modal: Extrato Especial de Entradas (Conciliação Oculta) -->
+    <div id="deposits-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-5 border border-zinc-800 shadow-2xl flex flex-col max-h-[75vh]">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
+                <h3 id="deposits-modal-title" class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Extrato de Depósitos</h3>
+                <button onclick="closeDepositHistoryModal()" class="p-1 text-zinc-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="deposits-modal-list" class="overflow-y-auto space-y-2 flex-1 pr-1 scroll-hide">
+                <!-- Injetado dinamicamente -->
+            </div>
+            <div class="pt-3 border-t border-zinc-800 mt-2 text-center">
+                <span class="text-[10px] text-zinc-500 uppercase block">Total do Período</span>
+                <span id="deposits-modal-total" class="text-lg font-black text-emerald-400">R$ 0,00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nova Conta -->
     <div id="bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl">
             <div class="flex justify-between items-center mb-6">
@@ -183,6 +225,7 @@
         </div>
     </div>
 
+    <!-- Modal: Aporte -->
     <div id="aporte-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-6 border border-zinc-800 shadow-2xl">
             <h3 class="text-lg font-bold mb-4 text-center">Realizar Aporte</h3>
@@ -201,6 +244,7 @@
         </div>
     </div>
 
+    <!-- Modal: Editar / Excluir Lançamento (Estilo Blindado) -->
     <div id="edit-bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -250,6 +294,7 @@
         };
 
         let editingBillId = null;
+        let seeAllBills = false; // Controle de visualização "Ver Mais"
         const STORAGE_KEY = 'provisoes_v3_3_data';
 
         function init() {
@@ -267,12 +312,11 @@
             render();
         }
 
-        // --- Depósito Diário (CORRIGIDO) ---
+        // --- Depósito Diário ---
         function confirmDailyDeposit() {
             const todayStr = new Date().toISOString().split('T')[0];
             const alreadyDone = state.history.some(h => h.date === todayStr);
             
-            // PROTEÇÃO: Se já foi feito hoje, não faz nada
             if (alreadyDone) return;
 
             const amount = parseFloat(document.getElementById('daily-input').value);
@@ -281,10 +325,8 @@
             state.balance += amount;
             state.history.push({ date: todayStr, amount: amount });
             
-            // Salva os dados primeiro
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             
-            // Depois limpa o input e atualiza os elementos visuais
             document.getElementById('daily-input').value = '';
             checkTodayDeposit();
             render();
@@ -297,7 +339,6 @@
             const input = document.getElementById('daily-input');
             
             if (alreadyDone) {
-                // Estado Travado Total: Desabilita input E botão para evitar bugs de cliques
                 btn.disabled = true;
                 btn.className = "bg-zinc-800 px-6 rounded-2xl font-bold flex items-center gap-2 border border-zinc-800 text-emerald-500/40 cursor-not-allowed";
                 btn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i>';
@@ -307,7 +348,6 @@
                 input.placeholder = "JÁ DEPOSITADO HOJE!"; 
                 input.className = "w-full bg-zinc-950/80 border border-zinc-800 rounded-2xl py-3 pl-10 pr-4 text-sm font-bold text-emerald-500/50 transition-all outline-none text-center select-none";
             } else {
-                // Estado Aberto Normal
                 btn.disabled = false;
                 btn.className = "bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all px-6 rounded-2xl font-bold flex items-center gap-2";
                 btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i>';
@@ -349,19 +389,13 @@
             }
         }
 
-        // Exclusão Controlada de Dentro do Modal
         function deleteBillFromModal() {
             if (!editingBillId) return;
-            
             const bill = state.bills.find(b => b.id === editingBillId);
             if (!bill) return;
 
-            // Confirmação Nível 1
-            if (!confirm('Excluir este lançamento?')) {
-                return;
-            }
+            if (!confirm('Excluir este lançamento?')) return;
 
-            // Confirmação Nível 2 (Parcelados)
             if (bill.installments > 1) {
                 const relatedBills = state.bills.filter(b => 
                     b.name === bill.name && 
@@ -371,7 +405,6 @@
 
                 if (relatedBills.length > 1) {
                     const deleteRelated = confirm('Este lançamento faz parte de um parcelamento. Deseja excluir todas as parcelas relacionadas?\n\n[OK] = Deletar Todas\n[Cancelar] = Deletar Apenas Esta');
-                    
                     if (deleteRelated) {
                         state.bills = state.bills.filter(b => !relatedBills.includes(b));
                     } else {
@@ -453,6 +486,58 @@
             save();
             closeEditBillModal();
         });
+
+        // --- Modals de Extrato de Depósitos Ocultos ---
+        function openDepositHistoryModal(type) {
+            const now = new Date();
+            let targetMonth, targetYear, titleText;
+            
+            if (type === 'current') {
+                targetMonth = now.getMonth();
+                targetYear = now.getFullYear();
+                titleText = "Entradas de " + now.toLocaleDateString('pt-BR', { month: 'long' });
+            } else {
+                const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                targetMonth = prev.getMonth();
+                targetYear = prev.getFullYear();
+                titleText = "Entradas de " + prev.toLocaleDateString('pt-BR', { month: 'long' });
+            }
+            
+            document.getElementById('deposits-modal-title').innerText = titleText;
+            
+            const filtered = state.history.filter(h => {
+                const d = new Date(h.date + 'T00:00:00');
+                return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+            }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Mais recentes no topo
+            
+            const listContainer = document.getElementById('deposits-modal-list');
+            const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+            
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `<div class="text-center py-6 text-zinc-600 text-xs">Nenhum depósito neste mês.</div>`;
+            } else {
+                listContainer.innerHTML = filtered.map(h => `
+                    <div class="flex justify-between items-center bg-zinc-950/40 p-2.5 border border-zinc-800 rounded-xl">
+                        <span class="text-xs text-zinc-400">${new Date(h.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span>
+                        <span class="text-xs font-bold text-emerald-400">+ ${fmt(h.amount)}</span>
+                    </div>
+                `).join('');
+            }
+            
+            const totalSum = filtered.reduce((acc, h) => acc + h.amount, 0);
+            document.getElementById('deposits-modal-total').innerText = fmt(totalSum);
+            
+            document.getElementById('deposits-modal').classList.remove('hidden');
+        }
+
+        function closeDepositHistoryModal() {
+            document.getElementById('deposits-modal').classList.add('hidden');
+        }
+
+        function toggleSeeAll() {
+            seeAllBills = !seeAllBills;
+            render();
+        }
 
         function resetAllData() {
             if (confirm('ATENÇÃO: Isso apagará todos os seus dados permanentemente. Confirmar?')) {
@@ -538,20 +623,52 @@
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
             
+            // 1. Atualizar Saldo Geral
             document.getElementById('main-balance').innerText = fmt(state.balance);
-            const pendingBills = state.bills.filter(b => !b.paid);
             
+            // 2. Calcular "Em Aberto" (Contas restantes pendentes do mês atual)
+            const pendingBills = state.bills.filter(b => !b.paid);
             const monthDebt = pendingBills.reduce((acc, b) => {
                 const d = new Date(b.date + 'T00:00:00');
                 return (d.getMonth() === currentMonth && d.getFullYear() === currentYear) ? acc + b.value : acc;
             }, 0);
             document.getElementById('month-debt').innerText = fmt(monthDebt);
             
+            // 3. Calcular "Cobertura" Dinâmica com Feedback Psicológico Instantâneo
             const coverage = state.balance - monthDebt;
             const coverageEl = document.getElementById('coverage-status');
-            coverageEl.innerText = fmt(coverage);
-            coverageEl.className = `text-sm font-bold ${coverage >= 0 ? 'text-emerald-400' : 'text-rose-500'}`;
+            const coverageBadge = document.getElementById('coverage-badge');
             
+            if (coverage >= 0) {
+                // Estado Positivo: Seguro e Protegido
+                coverageEl.innerText = fmt(coverage);
+                coverageEl.className = "text-sm font-black text-emerald-400";
+                coverageBadge.innerText = "Mês protegido";
+                coverageBadge.className = "text-[8px] font-bold uppercase tracking-wider block mt-0.5 text-emerald-500/80";
+            } else {
+                // Estado Negativo: Falha na cobertura
+                coverageEl.innerText = fmt(Math.abs(coverage)); // Mostra o valor puro sem o sinal de menos feio
+                coverageEl.className = "text-sm font-black text-amber-500";
+                coverageBadge.innerText = "Falta para fechar";
+                coverageBadge.className = "text-[8px] font-bold uppercase tracking-wider block mt-0.5 text-amber-500/80";
+            }
+            
+            // 4. Calcular Valores das Pílulas de Auditoria de Entradas (Histórico)
+            const curMonthEntries = state.history.filter(h => {
+                const d = new Date(h.date + 'T00:00:00');
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            }).reduce((acc, h) => acc + h.amount, 0);
+            
+            const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
+            const prevMonthEntries = state.history.filter(h => {
+                const d = new Date(h.date + 'T00:00:00');
+                return d.getMonth() === prevMonthDate.getMonth() && d.getFullYear() === prevMonthDate.getFullYear();
+            }).reduce((acc, h) => acc + h.amount, 0);
+            
+            document.getElementById('pill-current-month').innerText = fmt(curMonthEntries);
+            document.getElementById('pill-prev-month').innerText = fmt(prevMonthEntries);
+            
+            // 5. Renderizar o Cronograma de Meses do topo
             const scheduleContainer = document.getElementById('monthly-schedule');
             let scheduleHtml = '';
             for (let i = 0; i < 3; i++) {
@@ -572,14 +689,31 @@
             }
             scheduleContainer.innerHTML = scheduleHtml;
             
+            // 6. Filtrar e Organizar as Contas da Base de Dados
             let displayBills = [...state.bills];
             if (state.filter === 'pending') displayBills = displayBills.filter(b => !b.paid);
             if (state.filter === 'paid') displayBills = displayBills.filter(b => b.paid);
             displayBills.sort((a, b) => new Date(a.date) - new Date(b.date));
             
+            // 7. Controle Limitador "Anti-Pergaminho" (UX inteligente das fotos de referência)
+            const maxVisible = 6;
+            const totalBillsCount = displayBills.length;
             const container = document.getElementById('bills-container');
-            if (displayBills.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-zinc-600 text-sm">Vazio.</div>`;
+            const seeMoreBox = document.getElementById('see-more-container');
+            
+            if (totalBillsCount > maxVisible && !seeAllBills) {
+                displayBills = displayBills.slice(0, maxVisible);
+                seeMoreBox.classList.remove('hidden');
+                document.getElementById('btn-see-more').innerHTML = `<span>Ver Mais (${totalBillsCount - maxVisible} compromissos)</span> <i data-lucide="chevron-down" class="w-4 h-4"></i>`;
+            } else if (seeAllBills) {
+                seeMoreBox.classList.remove('hidden');
+                document.getElementById('btn-see-more').innerHTML = `<span>Recolher Lista</span> <i data-lucide="chevron-up" class="w-4 h-4"></i>`;
+            } else {
+                seeMoreBox.classList.add('hidden');
+            }
+            
+            if (totalBillsCount === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-zinc-600 text-sm">Nenhum compromisso cadastrado nesta aba.</div>`;
             } else {
                 container.innerHTML = displayBills.map(bill => {
                     const billDate = new Date(bill.date + 'T00:00:00');
@@ -696,4 +830,5 @@
         init();
     </script>
 </body>
-                        </html>
+</html>
+
