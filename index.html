@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cofrinho Inteligente v1.5</title>
+    <title>Cofrinho Inteligente v1.6</title>
     
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -86,7 +86,7 @@
                 </button>
             </div>
             
-            <!-- Pílulas de Conciliação baseadas nas referências visuais -->
+            <!-- Pílulas de Conciliação -->
             <div class="grid grid-cols-2 gap-2 pt-1">
                 <button onclick="openDepositHistoryModal('current')" class="bg-zinc-900/80 border border-zinc-800 p-2 rounded-xl text-left hover:bg-zinc-800 transition-colors">
                     <span class="text-[8px] text-zinc-500 uppercase font-bold block">Entradas do Mês</span>
@@ -110,10 +110,9 @@
             </button>
         </div>
 
-        <section>
+        <section class="hidden">
             <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 ml-1">Cronograma de Meses</h3>
-            <div id="monthly-schedule" class="grid grid-cols-3 gap-2">
-            </div>
+            <div id="monthly-schedule" class="grid grid-cols-3 gap-2"></div>
         </section>
 
         <div class="flex border-b border-zinc-800">
@@ -156,7 +155,7 @@
         </div>
     </main>
 
-    <!-- Modal: Extrato Especial de Entradas (Conciliação Oculta) -->
+    <!-- Modal: Extrato com botão de Excluir Depósitos (Estilo Foto 1780134836872.jpeg) -->
     <div id="deposits-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-5 border border-zinc-800 shadow-2xl flex flex-col max-h-[75vh]">
             <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
@@ -244,7 +243,7 @@
         </div>
     </div>
 
-    <!-- Modal: Editar / Excluir Lançamento (Estilo Blindado) -->
+    <!-- Modal: Editar / Excluir Lançamento -->
     <div id="edit-bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -294,12 +293,33 @@
         };
 
         let editingBillId = null;
-        let seeAllBills = false; // Controle de visualização "Ver Mais"
+        let seeAllBills = false;
+        let currentModalType = 'current';
         const STORAGE_KEY = 'provisoes_v3_3_data';
+
+        // --- Função de Data Local Segura (Vacina de Fuso) ---
+        function getLocalDateStr() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
 
         function init() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) state = JSON.parse(saved);
+            
+            // Correção retroativa automática de IDs antigos do histórico que não tinham ID único
+            let internalCheck = false;
+            if (state.history) {
+                state.history = state.history.map(h => {
+                    if (!h.id) {
+                        h.id = 'dep_' + h.date + '_' + Math.random().toString(36).substr(2, 5);
+                        internalCheck = true;
+                    }
+                    return h;
+                });
+            }
+            if (internalCheck) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
             const today = new Date();
             document.getElementById('today-date').innerText = today.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
             checkTodayDeposit();
@@ -314,7 +334,7 @@
 
         // --- Depósito Diário ---
         function confirmDailyDeposit() {
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getLocalDateStr();
             const alreadyDone = state.history.some(h => h.date === todayStr);
             
             if (alreadyDone) return;
@@ -323,7 +343,11 @@
             if(isNaN(amount) || amount <= 0) return;
             
             state.balance += amount;
-            state.history.push({ date: todayStr, amount: amount });
+            state.history.push({ 
+                id: 'dep_' + todayStr + '_' + Math.random().toString(36).substr(2, 5),
+                date: todayStr, 
+                amount: amount 
+            });
             
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             
@@ -333,7 +357,7 @@
         }
 
         function checkTodayDeposit() {
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getLocalDateStr();
             const alreadyDone = state.history.some(h => h.date === todayStr);
             const btn = document.getElementById('btn-daily');
             const input = document.getElementById('daily-input');
@@ -364,13 +388,38 @@
             const val = parseFloat(document.getElementById('aporte-value').value);
             const date = document.getElementById('aporte-date').value;
             if (val > 0) {
-                const historyDate = date || new Date().toISOString().split('T')[0];
+                const historyDate = date || getLocalDateStr();
                 state.balance += val;
-                state.history.push({ date: historyDate, amount: val });
+                state.history.push({ 
+                    id: 'ap_' + historyDate + '_' + Math.random().toString(36).substr(2, 5),
+                    date: historyDate, 
+                    amount: val 
+                });
                 save();
                 closeAporteModal();
                 document.getElementById('aporte-value').value = '';
                 document.getElementById('aporte-date').value = '';
+            }
+        }
+
+        // --- Função crucial: Excluir/Estornar Depósito do Extrato ---
+        function deleteDeposit(id) {
+            const entryIndex = state.history.findIndex(h => h.id === id);
+            if (entryIndex === -1) return;
+            
+            const entry = state.history[entryIndex];
+            const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(entry.amount);
+            
+            if (confirm(`Deseja estornar e excluir o depósito de ${fmt} realizado em ${formatDate(entry.date)}?\nO valor será subtraído do Saldo Acumulado.`)) {
+                state.balance -= entry.amount; // Tira o valor do saldo geral
+                state.history.splice(entryIndex, 1); // Remove do histórico
+                
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                checkTodayDeposit();
+                render();
+                
+                // Recarrega o modal de extrato aberto para atualizar a visualização imediatamente
+                openDepositHistoryModal(currentModalType);
             }
         }
 
@@ -487,8 +536,9 @@
             closeEditBillModal();
         });
 
-        // --- Modals de Extrato de Depósitos Ocultos ---
+        // --- Modals de Extrato Turbinado com Botão de Excluir ---
         function openDepositHistoryModal(type) {
+            currentModalType = type;
             const now = new Date();
             let targetMonth, targetYear, titleText;
             
@@ -508,18 +558,23 @@
             const filtered = state.history.filter(h => {
                 const d = new Date(h.date + 'T00:00:00');
                 return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
-            }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Mais recentes no topo
+            }).sort((a, b) => new Date(b.date) - new Date(a.date));
             
             const listContainer = document.getElementById('deposits-modal-list');
             const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
             
             if (filtered.length === 0) {
-                listContainer.innerHTML = `<div class="text-center py-6 text-zinc-600 text-xs">Nenhum depósito neste mês.</div>`;
+                listContainer.innerHTML = `<div class="text-center py-6 text-zinc-600 text-xs">Nenhum depósito registrado.</div>`;
             } else {
                 listContainer.innerHTML = filtered.map(h => `
-                    <div class="flex justify-between items-center bg-zinc-950/40 p-2.5 border border-zinc-800 rounded-xl">
-                        <span class="text-xs text-zinc-400">${new Date(h.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span>
-                        <span class="text-xs font-bold text-emerald-400">+ ${fmt(h.amount)}</span>
+                    <div class="flex justify-between items-center bg-zinc-950/40 p-2.5 border border-zinc-800 rounded-xl group">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-zinc-400">${new Date(h.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span>
+                            <span class="text-xs font-bold text-emerald-400">+ ${fmt(h.amount)}</span>
+                        </div>
+                        <button onclick="deleteDeposit('${h.id}')" class="text-zinc-600 hover:text-rose-400 p-1 rounded transition-colors" title="Excluir entrada">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
                     </div>
                 `).join('');
             }
@@ -528,6 +583,7 @@
             document.getElementById('deposits-modal-total').innerText = fmt(totalSum);
             
             document.getElementById('deposits-modal').classList.remove('hidden');
+            lucide.createIcons();
         }
 
         function closeDepositHistoryModal() {
@@ -585,35 +641,12 @@
             const dataStr = JSON.stringify(state, null, 2);
             const blob = new Blob([dataStr], { type: 'text/plain' });
             const now = new Date();
-            const dateStr = now.toISOString().split('T')[0];
-            const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+            const dateStr = getLocalDateStr();
             
             const link = document.createElement('a');
-            link.download = `backup_cofrinho_${dateStr}_${timeStr}.txt`;
+            link.download = `backup_cofrinho_${dateStr}.txt`;
             link.href = window.URL.createObjectURL(blob);
             link.click();
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedState = JSON.parse(e.target.result);
-                    if (importedState && typeof importedState.balance === 'number' && Array.isArray(importedState.bills)) {
-                        state = importedState;
-                        save();
-                        alert('Dados restaurados com absoluto sucesso!');
-                        location.reload();
-                    } else {
-                        alert('Arquivo de backup inválido.');
-                    }
-                } catch (err) {
-                    alert('Erro ao ler o arquivo.');
-                }
-            };
-            reader.readAsText(file);
         }
 
         // --- Renderizador da Interface ---
@@ -623,10 +656,8 @@
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
             
-            // 1. Atualizar Saldo Geral
             document.getElementById('main-balance').innerText = fmt(state.balance);
             
-            // 2. Calcular "Em Aberto" (Contas restantes pendentes do mês atual)
             const pendingBills = state.bills.filter(b => !b.paid);
             const monthDebt = pendingBills.reduce((acc, b) => {
                 const d = new Date(b.date + 'T00:00:00');
@@ -634,26 +665,23 @@
             }, 0);
             document.getElementById('month-debt').innerText = fmt(monthDebt);
             
-            // 3. Calcular "Cobertura" Dinâmica com Feedback Psicológico Instantâneo
             const coverage = state.balance - monthDebt;
             const coverageEl = document.getElementById('coverage-status');
             const coverageBadge = document.getElementById('coverage-badge');
             
             if (coverage >= 0) {
-                // Estado Positivo: Seguro e Protegido
                 coverageEl.innerText = fmt(coverage);
                 coverageEl.className = "text-sm font-black text-emerald-400";
                 coverageBadge.innerText = "Mês protegido";
                 coverageBadge.className = "text-[8px] font-bold uppercase tracking-wider block mt-0.5 text-emerald-500/80";
             } else {
-                // Estado Negativo: Falha na cobertura
-                coverageEl.innerText = fmt(Math.abs(coverage)); // Mostra o valor puro sem o sinal de menos feio
+                coverageEl.innerText = fmt(Math.abs(coverage));
                 coverageEl.className = "text-sm font-black text-amber-500";
                 coverageBadge.innerText = "Falta para fechar";
                 coverageBadge.className = "text-[8px] font-bold uppercase tracking-wider block mt-0.5 text-amber-500/80";
             }
             
-            // 4. Calcular Valores das Pílulas de Auditoria de Entradas (Histórico)
+            // Valores das Pílulas de Auditoria
             const curMonthEntries = state.history.filter(h => {
                 const d = new Date(h.date + 'T00:00:00');
                 return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
@@ -668,34 +696,13 @@
             document.getElementById('pill-current-month').innerText = fmt(curMonthEntries);
             document.getElementById('pill-prev-month').innerText = fmt(prevMonthEntries);
             
-            // 5. Renderizar o Cronograma de Meses do topo
-            const scheduleContainer = document.getElementById('monthly-schedule');
-            let scheduleHtml = '';
-            for (let i = 0; i < 3; i++) {
-                const d = new Date(currentYear, currentMonth + i, 1);
-                const m = d.getMonth();
-                const y = d.getFullYear();
-                const monthName = d.toLocaleDateString('pt-BR', { month: 'short' });
-                const total = pendingBills.reduce((acc, b) => {
-                    const bd = new Date(b.date + 'T00:00:00');
-                    return (bd.getMonth() === m && bd.getFullYear() === y) ? acc + b.value : acc;
-                }, 0);
-                scheduleHtml += `
-                    <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl text-center">
-                        <span class="text-[9px] text-zinc-500 uppercase font-bold block mb-1">${monthName}</span>
-                        <span class="text-[11px] font-black text-zinc-200">${fmt(total)}</span>
-                    </div>
-                `;
-            }
-            scheduleContainer.innerHTML = scheduleHtml;
-            
-            // 6. Filtrar e Organizar as Contas da Base de Dados
+            // Organizar as Contas da Base de Dados
             let displayBills = [...state.bills];
             if (state.filter === 'pending') displayBills = displayBills.filter(b => !b.paid);
             if (state.filter === 'paid') displayBills = displayBills.filter(b => b.paid);
             displayBills.sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            // 7. Controle Limitador "Anti-Pergaminho" (UX inteligente das fotos de referência)
+            // Controle Limitador "Anti-Pergaminho"
             const maxVisible = 6;
             const totalBillsCount = displayBills.length;
             const container = document.getElementById('bills-container');
@@ -746,7 +753,6 @@
             lucide.createIcons();
         }
 
-        // --- Filtros e Controles de Visão ---
         function setFilter(f) {
             state.filter = f;
             ['pending', 'paid', 'all'].forEach(id => {
@@ -760,7 +766,7 @@
             editingBillId = null;
             document.getElementById('bill-modal-title').innerText = 'Lançar Compromisso';
             document.getElementById('bill-form').reset();
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateStr();
             document.getElementById('bill-launch-date').value = today;
             document.getElementById('bill-date').value = today;
             document.getElementById('bill-modal').classList.remove('hidden'); 
@@ -769,7 +775,7 @@
         function closeBillModal() { document.getElementById('bill-modal').classList.add('hidden'); }
         
         function openAporteModal() { 
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateStr();
             document.getElementById('aporte-date').value = today;
             document.getElementById('aporte-modal').classList.remove('hidden'); 
             document.getElementById('aporte-value').focus(); 
@@ -821,6 +827,28 @@
             closeBillModal();
             e.target.reset();
         });
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    if (importedState && typeof importedState.balance === 'number' && Array.isArray(importedState.bills)) {
+                        state = importedState;
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                        alert('Dados restaurados com absoluto sucesso!');
+                        location.reload();
+                    } else {
+                        alert('Arquivo de backup inválido.');
+                    }
+                } catch (err) {
+                    alert('Erro ao ler o arquivo.');
+                }
+            };
+            reader.readAsText(file);
+        }
 
         function formatDate(dateStr) {
             const d = new Date(dateStr + 'T00:00:00');
