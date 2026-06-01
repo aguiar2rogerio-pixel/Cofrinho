@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cofrinho Inteligente v1.6</title>
+    <title>Cofrinho Inteligente v1.7</title>
     
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -57,7 +57,7 @@
             
             <div class="grid grid-cols-2 gap-4 w-full mt-5 pt-4 border-t border-zinc-800">
                 <div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50">
-                    <span class="text-zinc-500 text-[9px] uppercase block mb-1">Em Aberto</span>
+                    <span class="text-zinc-500 text-[9px] uppercase block mb-1">Em Aberto (Acumulado)</span>
                     <span id="month-debt" class="text-sm font-bold text-zinc-200">R$ 0,00</span>
                 </div>
                 <div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50 flex flex-col justify-center items-center">
@@ -87,14 +87,22 @@
             </div>
             
             <!-- Pílulas de Conciliação -->
-            <div class="grid grid-cols-2 gap-2 pt-1">
-                <button onclick="openDepositHistoryModal('current')" class="bg-zinc-900/80 border border-zinc-800 p-2 rounded-xl text-left hover:bg-zinc-800 transition-colors">
-                    <span class="text-[8px] text-zinc-500 uppercase font-bold block">Entradas do Mês</span>
-                    <span id="pill-current-month" class="text-xs font-bold text-emerald-400">R$ 0,00</span>
-                </button>
-                <button onclick="openDepositHistoryModal('previous')" class="bg-zinc-900/80 border border-zinc-800 p-2 rounded-xl text-left hover:bg-zinc-800 transition-colors">
-                    <span class="text-[8px] text-zinc-500 uppercase font-bold block">Mês Anterior</span>
-                    <span id="pill-prev-month" class="text-xs font-bold text-zinc-400">R$ 0,00</span>
+            <div class="space-y-2 pt-1">
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="openDepositHistoryModal('current')" class="bg-zinc-900/80 border border-zinc-800 p-2 rounded-xl text-left hover:bg-zinc-800 transition-colors">
+                        <span class="text-[8px] text-zinc-500 uppercase font-bold block">Entradas do Mês</span>
+                        <span id="pill-current-month" class="text-xs font-bold text-emerald-400">R$ 0,00</span>
+                    </button>
+                    <button onclick="openDepositHistoryModal('previous')" class="bg-zinc-900/80 border border-zinc-800 p-2 rounded-xl text-left hover:bg-zinc-800 transition-colors">
+                        <span class="text-[8px] text-zinc-500 uppercase font-bold block">Mês Anterior</span>
+                        <span id="pill-prev-month" class="text-xs font-bold text-zinc-400">R$ 0,00</span>
+                    </button>
+                </div>
+                
+                <!-- Botão Balão para Ver Todos os Meses Ocultos -->
+                <button onclick="openAllMonthsModal()" class="w-full bg-zinc-900/40 border border-zinc-800/60 py-2 rounded-xl text-center hover:bg-zinc-800 transition-all text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
+                    <i data-lucide="calendar-days" class="w-3.5 h-3.5 text-blue-400"></i>
+                    Ver Histórico de Outros Meses
                 </button>
             </div>
         </section>
@@ -109,11 +117,6 @@
                 <span class="font-bold text-sm">Nova Conta</span>
             </button>
         </div>
-
-        <section class="hidden">
-            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 ml-1">Cronograma de Meses</h3>
-            <div id="monthly-schedule" class="grid grid-cols-3 gap-2"></div>
-        </section>
 
         <div class="flex border-b border-zinc-800">
             <button onclick="setFilter('pending')" id="tab-pending" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest tab-active">Pendentes</button>
@@ -155,11 +158,27 @@
         </div>
     </main>
 
-    <!-- Modal: Extrato com botão de Excluir Depósitos (Estilo Foto 1780134836872.jpeg) -->
+    <!-- Modal: Seletor de Todos os Meses Históricos (Nova Tela) -->
+    <div id="all-months-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-5 border border-zinc-800 shadow-2xl flex flex-col max-h-[70vh]">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-zinc-800">
+                <h3 class="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                    <i data-lucide="archive" class="w-3.5 h-3.5"></i> Arquivo de Depósitos
+                </h3>
+                <button onclick="closeAllMonthsModal()" class="p-1 text-zinc-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="all-months-list" class="overflow-y-auto space-y-2 flex-1 pr-1 scroll-hide">
+                <!-- Injetado dinamicamente via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Extrato com botão de Excluir Depósitos (Estilo Foto original) -->
     <div id="deposits-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-5 border border-zinc-800 shadow-2xl flex flex-col max-h-[75vh]">
             <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
-                <h3 id="deposits-modal-title" class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Extrato de Depósitos</h3>
+                <button onclick="backToMonthsModal()" id="btn-modal-back" class="text-zinc-500 hover:text-white hidden"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+                <h3 id="deposits-modal-title" class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex-1 text-center">Extrato de Depósitos</h3>
                 <button onclick="closeDepositHistoryModal()" class="p-1 text-zinc-500"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div id="deposits-modal-list" class="overflow-y-auto space-y-2 flex-1 pr-1 scroll-hide">
@@ -294,10 +313,10 @@
 
         let editingBillId = null;
         let seeAllBills = false;
-        let currentModalType = 'current';
+        let currentModalView = 'current'; // Armazena se estamos vendo 'current', 'previous' ou um par de 'ano-mes'
         const STORAGE_KEY = 'provisoes_v3_3_data';
 
-        // --- Função de Data Local Segura (Vacina de Fuso) ---
+        // --- Data Local Sincronizada ---
         function getLocalDateStr() {
             const d = new Date();
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -307,18 +326,15 @@
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) state = JSON.parse(saved);
             
-            // Correção retroativa automática de IDs antigos do histórico que não tinham ID único
-            let internalCheck = false;
             if (state.history) {
                 state.history = state.history.map(h => {
                     if (!h.id) {
                         h.id = 'dep_' + h.date + '_' + Math.random().toString(36).substr(2, 5);
-                        internalCheck = true;
                     }
                     return h;
                 });
             }
-            if (internalCheck) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
             const today = new Date();
             document.getElementById('today-date').innerText = today.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -332,11 +348,10 @@
             render();
         }
 
-        // --- Depósito Diário ---
+        // --- Operações de Depósito ---
         function confirmDailyDeposit() {
             const todayStr = getLocalDateStr();
             const alreadyDone = state.history.some(h => h.date === todayStr);
-            
             if (alreadyDone) return;
 
             const amount = parseFloat(document.getElementById('daily-input').value);
@@ -350,7 +365,6 @@
             });
             
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-            
             document.getElementById('daily-input').value = '';
             checkTodayDeposit();
             render();
@@ -366,7 +380,6 @@
                 btn.disabled = true;
                 btn.className = "bg-zinc-800 px-6 rounded-2xl font-bold flex items-center gap-2 border border-zinc-800 text-emerald-500/40 cursor-not-allowed";
                 btn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i>';
-                
                 input.disabled = true;
                 input.value = ''; 
                 input.placeholder = "JÁ DEPOSITADO HOJE!"; 
@@ -375,7 +388,6 @@
                 btn.disabled = false;
                 btn.className = "bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all px-6 rounded-2xl font-bold flex items-center gap-2";
                 btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i>';
-                
                 input.disabled = false;
                 input.placeholder = "0,00";
                 input.className = "w-full bg-zinc-900 border border-zinc-700 rounded-2xl py-3 pl-10 pr-4 text-lg font-bold focus:border-emerald-500 transition-all outline-none";
@@ -383,7 +395,6 @@
             lucide.createIcons();
         }
 
-        // --- Aporte ---
         function confirmAporte() {
             const val = parseFloat(document.getElementById('aporte-value').value);
             const date = document.getElementById('aporte-date').value;
@@ -402,7 +413,6 @@
             }
         }
 
-        // --- Função crucial: Excluir/Estornar Depósito do Extrato ---
         function deleteDeposit(id) {
             const entryIndex = state.history.findIndex(h => h.id === id);
             if (entryIndex === -1) return;
@@ -410,20 +420,138 @@
             const entry = state.history[entryIndex];
             const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(entry.amount);
             
-            if (confirm(`Deseja estornar e excluir o depósito de ${fmt} realizado em ${formatDate(entry.date)}?\nO valor será subtraído do Saldo Acumulado.`)) {
-                state.balance -= entry.amount; // Tira o valor do saldo geral
-                state.history.splice(entryIndex, 1); // Remove do histórico
+            if (confirm(`Deseja estornar o depósito de ${fmt} realizado em ${formatDate(entry.date)}?\nO valor será removido do Saldo Geral.`)) {
+                state.balance -= entry.amount;
+                state.history.splice(entryIndex, 1);
                 
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
                 checkTodayDeposit();
                 render();
                 
-                // Recarrega o modal de extrato aberto para atualizar a visualização imediatamente
-                openDepositHistoryModal(currentModalType);
+                // Recarrega o extrato mantendo o contexto correto de visualização
+                openDepositHistoryModal(currentModalView);
             }
         }
 
-        // --- Lançamentos e Quitação ---
+        // --- Modals de Visualização de Histórico Extendido ---
+        function openAllMonthsModal() {
+            const listContainer = document.getElementById('all-months-list');
+            const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+            
+            // Agrupar todo o histórico existente por Ano-Mês
+            const groups = {};
+            state.history.forEach(h => {
+                const parts = h.date.split('-'); // [ano, mes, dia]
+                const key = `${parts[0]}-${parts[1]}`; // "YYYY-MM"
+                if (!groups[key]) groups[key] = 0;
+                groups[key] += h.amount;
+            });
+
+            const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+            
+            if (sortedKeys.length === 0) {
+                listContainer.innerHTML = `<div class="text-center py-6 text-zinc-600 text-xs">Sem registros históricos.</div>`;
+            } else {
+                listContainer.innerHTML = sortedKeys.map(key => {
+                    const [year, month] = key.split('-');
+                    const labelDate = new Date(year, parseInt(month) - 1, 1);
+                    const monthLabel = labelDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                    
+                    return `
+                        <button onclick="openDepositHistoryModal('${key}', true)" class="w-full flex justify-between items-center bg-zinc-950/50 border border-zinc-800/80 p-3 rounded-xl hover:bg-zinc-800 transition-colors text-left">
+                            <span class="text-xs font-bold text-zinc-300 capitalize">${monthLabel}</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-black text-emerald-400">${fmt(groups[key])}</span>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-600"></i>
+                            </div>
+                        </button>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('all-months-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeAllMonthsModal() {
+            document.getElementById('all-months-modal').classList.add('hidden');
+        }
+
+        function openDepositHistoryModal(viewType, cameFromAllMonths = false) {
+            currentModalView = viewType;
+            const now = new Date();
+            let targetMonth, targetYear, titleText;
+            
+            const backBtn = document.getElementById('btn-modal-back');
+            if (cameFromAllMonths) {
+                backBtn.classList.remove('hidden');
+            } else {
+                backBtn.classList.add('hidden');
+            }
+
+            // Identificar qual mês o usuário quer examinar
+            if (viewType === 'current') {
+                targetMonth = now.getMonth();
+                targetYear = now.getFullYear();
+                titleText = "Entradas de " + now.toLocaleDateString('pt-BR', { month: 'long' });
+            } else if (viewType === 'previous') {
+                const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                targetMonth = prev.getMonth();
+                targetYear = prev.getFullYear();
+                titleText = "Entradas de " + prev.toLocaleDateString('pt-BR', { month: 'long' });
+            } else {
+                // Padrão estruturado "YYYY-MM"
+                const [year, month] = viewType.split('-');
+                targetMonth = parseInt(month) - 1;
+                targetYear = parseInt(year);
+                const labelDate = new Date(targetYear, targetMonth, 1);
+                titleText = "Entradas de " + labelDate.toLocaleDateString('pt-BR', { month: 'long' });
+            }
+            
+            document.getElementById('deposits-modal-title').innerText = titleText;
+            
+            const filtered = state.history.filter(h => {
+                const d = new Date(h.date + 'T00:00:00');
+                return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+            }).sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const listContainer = document.getElementById('deposits-modal-list');
+            const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+            
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `<div class="text-center py-6 text-zinc-600 text-xs">Nenhum depósito neste período.</div>`;
+            } else {
+                listContainer.innerHTML = filtered.map(h => `
+                    <div class="flex justify-between items-center bg-zinc-950/40 p-2.5 border border-zinc-800 rounded-xl">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-zinc-400">${new Date(h.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span>
+                            <span class="text-xs font-bold text-emerald-400">+ ${fmt(h.amount)}</span>
+                        </div>
+                        <button onclick="deleteDeposit('${h.id}')" class="text-zinc-600 hover:text-rose-400 p-1 rounded transition-colors">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+            
+            const totalSum = filtered.reduce((acc, h) => acc + h.amount, 0);
+            document.getElementById('deposits-modal-total').innerText = fmt(totalSum);
+            
+            if (cameFromAllMonths) closeAllMonthsModal();
+            document.getElementById('deposits-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function backToMonthsModal() {
+            closeDepositHistoryModal();
+            openAllMonthsModal();
+        }
+
+        function closeDepositHistoryModal() {
+            document.getElementById('deposits-modal').classList.add('hidden');
+        }
+
+        // --- Gerenciamento de Contas e Compromissos ---
         function payBill(id) {
             const bill = state.bills.find(b => b.id === id);
             if (bill && !bill.paid) {
@@ -451,21 +579,16 @@
                     b.installments === bill.installments &&
                     b.date >= bill.date
                 );
-
                 if (relatedBills.length > 1) {
-                    const deleteRelated = confirm('Este lançamento faz parte de um parcelamento. Deseja excluir todas as parcelas relacionadas?\n\n[OK] = Deletar Todas\n[Cancelar] = Deletar Apenas Esta');
-                    if (deleteRelated) {
-                        state.bills = state.bills.filter(b => !relatedBills.includes(b));
-                    } else {
-                        state.bills = state.bills.filter(b => b.id !== editingBillId);
-                    }
+                    const deleteRelated = confirm('Excluir todas as parcelas futuras vinculadas?\n\n[OK] = Deletar Todas\n[Cancelar] = Apenas Esta');
+                    if (deleteRelated) state.bills = state.bills.filter(b => !relatedBills.includes(b));
+                    else state.bills = state.bills.filter(b => b.id !== editingBillId);
                 } else {
                     state.bills = state.bills.filter(b => b.id !== editingBillId);
                 }
             } else {
                 state.bills = state.bills.filter(b => b.id !== editingBillId);
             }
-
             save();
             closeEditBillModal();
         }
@@ -486,9 +609,7 @@
                 infoText = `Parcela ${bill.installmentNum} de ${bill.installments}`;
             }
             document.getElementById('edit-bill-installments-info').innerText = infoText;
-
             document.getElementById('edit-bill-modal').classList.remove('hidden');
-            document.getElementById('edit-bill-name').focus();
         }
 
         function closeEditBillModal() {
@@ -503,7 +624,6 @@
             if (!bill) return;
 
             const oldName = bill.name;
-            const oldValue = bill.value;
             const oldDate = bill.date;
 
             bill.name = document.getElementById('edit-bill-name').value;
@@ -517,78 +637,21 @@
                     b.installments === bill.installments &&
                     b.date >= oldDate
                 );
-                
                 relatedBills.forEach((relBill, index) => {
                     relBill.name = bill.name;
                     relBill.value = bill.value;
                     relBill.recurring = bill.recurring;
-                    if (index === 0) {
-                        relBill.date = bill.date;
-                    } else {
+                    if (index === 0) relBill.date = bill.date;
+                    else {
                         const d = new Date(bill.date + 'T00:00:00');
                         d.setMonth(d.getMonth() + index);
                         relBill.date = d.toISOString().split('T')[0];
                     }
                 });
             }
-
             save();
             closeEditBillModal();
         });
-
-        // --- Modals de Extrato Turbinado com Botão de Excluir ---
-        function openDepositHistoryModal(type) {
-            currentModalType = type;
-            const now = new Date();
-            let targetMonth, targetYear, titleText;
-            
-            if (type === 'current') {
-                targetMonth = now.getMonth();
-                targetYear = now.getFullYear();
-                titleText = "Entradas de " + now.toLocaleDateString('pt-BR', { month: 'long' });
-            } else {
-                const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                targetMonth = prev.getMonth();
-                targetYear = prev.getFullYear();
-                titleText = "Entradas de " + prev.toLocaleDateString('pt-BR', { month: 'long' });
-            }
-            
-            document.getElementById('deposits-modal-title').innerText = titleText;
-            
-            const filtered = state.history.filter(h => {
-                const d = new Date(h.date + 'T00:00:00');
-                return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
-            }).sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            const listContainer = document.getElementById('deposits-modal-list');
-            const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-            
-            if (filtered.length === 0) {
-                listContainer.innerHTML = `<div class="text-center py-6 text-zinc-600 text-xs">Nenhum depósito registrado.</div>`;
-            } else {
-                listContainer.innerHTML = filtered.map(h => `
-                    <div class="flex justify-between items-center bg-zinc-950/40 p-2.5 border border-zinc-800 rounded-xl group">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-zinc-400">${new Date(h.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span>
-                            <span class="text-xs font-bold text-emerald-400">+ ${fmt(h.amount)}</span>
-                        </div>
-                        <button onclick="deleteDeposit('${h.id}')" class="text-zinc-600 hover:text-rose-400 p-1 rounded transition-colors" title="Excluir entrada">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
-                `).join('');
-            }
-            
-            const totalSum = filtered.reduce((acc, h) => acc + h.amount, 0);
-            document.getElementById('deposits-modal-total').innerText = fmt(totalSum);
-            
-            document.getElementById('deposits-modal').classList.remove('hidden');
-            lucide.createIcons();
-        }
-
-        function closeDepositHistoryModal() {
-            document.getElementById('deposits-modal').classList.add('hidden');
-        }
 
         function toggleSeeAll() {
             seeAllBills = !seeAllBills;
@@ -596,7 +659,7 @@
         }
 
         function resetAllData() {
-            if (confirm('ATENÇÃO: Isso apagará todos os seus dados permanentemente. Confirmar?')) {
+            if (confirm('Aviso: Apagar todos os dados permanentemente?')) {
                 localStorage.removeItem(STORAGE_KEY);
                 location.reload();
             }
@@ -636,20 +699,16 @@
             if (added) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         }
 
-        // --- Backup e Restore ---
         function exportData() {
             const dataStr = JSON.stringify(state, null, 2);
             const blob = new Blob([dataStr], { type: 'text/plain' });
-            const now = new Date();
-            const dateStr = getLocalDateStr();
-            
             const link = document.createElement('a');
-            link.download = `backup_cofrinho_${dateStr}.txt`;
+            link.download = `backup_cofrinho_${getLocalDateStr()}.txt`;
             link.href = window.URL.createObjectURL(blob);
             link.click();
         }
 
-        // --- Renderizador da Interface ---
+        // --- Core Render — Correção de Erros de Transição de Mês ---
         function render() {
             const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
             const now = new Date();
@@ -658,14 +717,20 @@
             
             document.getElementById('main-balance').innerText = fmt(state.balance);
             
+            // CORREÇÃO CIRÚRGICA 1: Somar pendentes atuais E todas as contas que já venceram para trás no passado
             const pendingBills = state.bills.filter(b => !b.paid);
-            const monthDebt = pendingBills.reduce((acc, b) => {
+            const accumulatedDebt = pendingBills.reduce((acc, b) => {
                 const d = new Date(b.date + 'T00:00:00');
-                return (d.getMonth() === currentMonth && d.getFullYear() === currentYear) ? acc + b.value : acc;
+                // Se for deste ano e de meses anteriores, ou do ano passado, ou do mês corrente: entra na soma!
+                if (d.getFullYear() < currentYear || (d.getFullYear() === currentYear && d.getMonth() <= currentMonth)) {
+                    return acc + b.value;
+                }
+                return acc;
             }, 0);
-            document.getElementById('month-debt').innerText = fmt(monthDebt);
             
-            const coverage = state.balance - monthDebt;
+            document.getElementById('month-debt').innerText = fmt(accumulatedDebt);
+            
+            const coverage = state.balance - accumulatedDebt;
             const coverageEl = document.getElementById('coverage-status');
             const coverageBadge = document.getElementById('coverage-badge');
             
@@ -681,7 +746,7 @@
                 coverageBadge.className = "text-[8px] font-bold uppercase tracking-wider block mt-0.5 text-amber-500/80";
             }
             
-            // Valores das Pílulas de Auditoria
+            // Valores fixos rápidos das duas pílulas principais
             const curMonthEntries = state.history.filter(h => {
                 const d = new Date(h.date + 'T00:00:00');
                 return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
@@ -696,13 +761,14 @@
             document.getElementById('pill-current-month').innerText = fmt(curMonthEntries);
             document.getElementById('pill-prev-month').innerText = fmt(prevMonthEntries);
             
-            // Organizar as Contas da Base de Dados
+            // Organização das Listas de Contas
             let displayBills = [...state.bills];
             if (state.filter === 'pending') displayBills = displayBills.filter(b => !b.paid);
             if (state.filter === 'paid') displayBills = displayBills.filter(b => b.paid);
+            
+            // Ordenar: as mais antigas/vencidas aparecem primeiro no topo!
             displayBills.sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            // Controle Limitador "Anti-Pergaminho"
             const maxVisible = 6;
             const totalBillsCount = displayBills.length;
             const container = document.getElementById('bills-container');
@@ -716,11 +782,11 @@
                 seeMoreBox.classList.remove('hidden');
                 document.getElementById('btn-see-more').innerHTML = `<span>Recolher Lista</span> <i data-lucide="chevron-up" class="w-4 h-4"></i>`;
             } else {
-                seeMoreBox.classList.add('hidden');
+                seeMoreBox.add ? seeMoreBox.classList.add('hidden') : seeMoreBox.className += " hidden";
             }
             
             if (totalBillsCount === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-zinc-600 text-sm">Nenhum compromisso cadastrado nesta aba.</div>`;
+                container.innerHTML = `<div class="text-center py-10 text-zinc-600 text-sm">Nenhum compromisso cadastrado aqui.</div>`;
             } else {
                 container.innerHTML = displayBills.map(bill => {
                     const billDate = new Date(bill.date + 'T00:00:00');
@@ -764,21 +830,17 @@
 
         function openBillModal() { 
             editingBillId = null;
-            document.getElementById('bill-modal-title').innerText = 'Lançar Compromisso';
             document.getElementById('bill-form').reset();
             const today = getLocalDateStr();
             document.getElementById('bill-launch-date').value = today;
             document.getElementById('bill-date').value = today;
             document.getElementById('bill-modal').classList.remove('hidden'); 
-            document.getElementById('bill-name').focus(); 
         }
         function closeBillModal() { document.getElementById('bill-modal').classList.add('hidden'); }
         
         function openAporteModal() { 
-            const today = getLocalDateStr();
-            document.getElementById('aporte-date').value = today;
+            document.getElementById('aporte-date').value = getLocalDateStr();
             document.getElementById('aporte-modal').classList.remove('hidden'); 
-            document.getElementById('aporte-value').focus(); 
         }
         function closeAporteModal() { document.getElementById('aporte-modal').classList.add('hidden'); }
 
@@ -825,7 +887,6 @@
             save();
             generateRecurringBills();
             closeBillModal();
-            e.target.reset();
         });
 
         function importData(event) {
@@ -835,17 +896,13 @@
             reader.onload = function(e) {
                 try {
                     const importedState = JSON.parse(e.target.result);
-                    if (importedState && typeof importedState.balance === 'number' && Array.isArray(importedState.bills)) {
+                    if (importedState && typeof importedState.balance === 'number') {
                         state = importedState;
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-                        alert('Dados restaurados com absoluto sucesso!');
+                        alert('Backup restaurado com sucesso!');
                         location.reload();
-                    } else {
-                        alert('Arquivo de backup inválido.');
                     }
-                } catch (err) {
-                    alert('Erro ao ler o arquivo.');
-                }
+                } catch (err) { alert('Erro no arquivo.'); }
             };
             reader.readAsText(file);
         }
@@ -858,5 +915,4 @@
         init();
     </script>
 </body>
-</html>
-
+    </html>
