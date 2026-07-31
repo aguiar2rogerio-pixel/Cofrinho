@@ -155,7 +155,7 @@
         </div>
 
         <section class="glass-card p-4 rounded-3xl space-y-3">
-            <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Segurança dos Dados</h3>
+            <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Segurança e Ajustes</h3>
             <div class="grid grid-cols-2 gap-3">
                 <button onclick="exportData()" class="flex items-center justify-center gap-2 py-3 bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 active:scale-95 transition-all text-xs font-bold text-zinc-200 rounded-xl">
                     <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
@@ -165,6 +165,18 @@
                     <i data-lucide="upload" class="w-4 h-4 text-blue-400"></i>
                     Restaurar
                     <input type="file" id="import-file" accept=".txt" onchange="importData(event)" class="hidden">
+                </label>
+            </div>
+
+            <!-- OPÇÃO DO LEMBRETE ELEGANTE -->
+            <div class="pt-2 border-t border-zinc-800/60 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="bell" class="w-4 h-4 text-amber-400"></i>
+                    <span class="text-xs font-bold text-zinc-300">Lembrete Diário Discreto</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-reminder" onchange="toggleReminderSetting(this.checked)" class="sr-only peer">
+                    <div class="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-400 after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
                 </label>
             </div>
         </section>
@@ -359,6 +371,9 @@
             checkTodayDeposit();
             generateRecurringBills();
             render();
+
+            // Inicializa o módulo de Lembretes Elegantes
+            initReminderModule();
         }
 
         function save() {
@@ -718,7 +733,7 @@
             link.click();
         }
 
-        // --- Core Render — Atualizado com Projeções de Futuro ---
+        // --- Core Render ---
         function render() {
             const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
             const now = new Date();
@@ -764,7 +779,7 @@
             document.getElementById('lbl-next-month').innerText = m1.toLocaleDateString('pt-BR', { month: 'short' });
             document.getElementById('lbl-after-month').innerText = m2.toLocaleDateString('pt-BR', { month: 'short' });
 
-            // Soma das contas daquele mês específico (independente de estar paga ou não, para mapear custo total)
+            // Soma das contas daquele mês específico
             const calcMonthBillsTotal = (targetDate) => {
                 return state.bills.filter(b => {
                     const d = new Date(b.date + 'T00:00:00');
@@ -941,8 +956,87 @@
             return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
         }
 
+        // ==========================================
+        // MÓDULO ISOLADO: LEMBRETE ELEGANTE (BEST EFFORT)
+        // ==========================================
+        const REMINDER_KEY = 'saldo_seguro_reminder_enabled';
+        const LAST_VISIT_KEY = 'saldo_seguro_last_visit';
+
+        function initReminderModule() {
+            const isEnabled = localStorage.getItem(REMINDER_KEY) === 'true';
+            const toggleEl = document.getElementById('toggle-reminder');
+            if (toggleEl) toggleEl.checked = isEnabled;
+
+            // Ao abrir o app, limpa qualquer badge/ponto do ícone do app na tela inicial
+            clearAppBadgeSafe();
+
+            // Grava o dia do acesso atual
+            const todayStr = getLocalDateStr();
+            localStorage.setItem(LAST_VISIT_KEY, todayStr);
+
+            // Se o lembrete estiver ativo, verifica e simula a programação local
+            if (isEnabled) {
+                checkAndTriggerReminder();
+            }
+        }
+
+        function toggleReminderSetting(enabled) {
+            if (enabled) {
+                if ('Notification' in window && Notification.permission !== 'granted') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            localStorage.setItem(REMINDER_KEY, 'true');
+                            checkAndTriggerReminder();
+                        } else {
+                            document.getElementById('toggle-reminder').checked = false;
+                            localStorage.setItem(REMINDER_KEY, 'false');
+                            alert('A permissão para lembretes foi negada no navegador.');
+                        }
+                    });
+                } else {
+                    localStorage.setItem(REMINDER_KEY, 'true');
+                    checkAndTriggerReminder();
+                }
+            } else {
+                localStorage.setItem(REMINDER_KEY, 'false');
+                clearAppBadgeSafe();
+            }
+        }
+
+        function setAppBadgeSafe(number = 1) {
+            if ('setAppBadge' in navigator) {
+                navigator.setAppBadge(number).catch(() => {});
+            }
+        }
+
+        function clearAppBadgeSafe() {
+            if ('clearAppBadge' in navigator) {
+                navigator.clearAppBadge().catch(() => {});
+            }
+        }
+
+        function checkAndTriggerReminder() {
+            if (localStorage.getItem(REMINDER_KEY) !== 'true') return;
+
+            const lastVisit = localStorage.getItem(LAST_VISIT_KEY);
+            const todayStr = getLocalDateStr();
+
+            // Lógica de Melhor Esforço: Se o usuário ficou ao menos 1 dia sem abrir o app, exibe o Badge visual no ícone
+            if (lastVisit && lastVisit !== todayStr) {
+                setAppBadgeSafe(1);
+
+                // Dispara notificação silenciosa pelo Service Worker se houver permissão
+                if ('Notification' in window && Notification.permission === 'granted' && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'SHOW_SILENT_REMINDER',
+                        title: 'Saldo Seguro',
+                        body: 'Só passando para lembrar que seu futuro financeiro existe.'
+                    });
+                }
+            }
+        }
+
         init();
     </script>
 </body>
 </html>
-
