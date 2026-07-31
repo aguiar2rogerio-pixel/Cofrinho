@@ -1,5 +1,5 @@
 // Service Worker para Cofrinho Inteligente
-// Versão: 1.1.0 (Com módulo de Nudge Psicológico)
+// Versão: 1.0.0
 
 const CACHE_NAME = 'cofrinho-v1';
 const ASSETS_TO_CACHE = [
@@ -16,6 +16,7 @@ self.addEventListener('install', (event) => {
       console.log('[SW] Cache aberto, adicionando assets...');
       return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
         console.warn('[SW] Alguns assets não puderam ser cacheados:', err);
+        // Continuar mesmo se alguns assets falharem
         return cache.add('./').catch(() => {
           console.warn('[SW] Falha ao cachear a página raiz');
         });
@@ -47,16 +48,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
+  // Ignorar requisições não-GET
   if (request.method !== 'GET') {
     return;
   }
 
-  // DISPARADOR OPORTUNISTA: Sempre que o app se move, o SW avalia o hábito
-  event.waitUntil(verificarGatilhoMentalOportunista());
-
+  // Estratégia: tentar rede primeiro, fallback para cache
   event.respondWith(
     fetch(request)
       .then((response) => {
+        // Se a resposta for bem-sucedida, cacheá-la
         if (response && response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -66,76 +67,34 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
+        // Se a rede falhar, tentar o cache
         return caches.match(request).then((cachedResponse) => {
           if (cachedResponse) {
             console.log('[SW] Servindo do cache:', request.url);
             return cachedResponse;
           }
+          // Se não estiver no cache, retornar página offline (se aplicável)
           console.warn('[SW] Recurso não encontrado:', request.url);
           return new Response('Recurso não disponível offline', {
             status: 503,
             statusText: 'Service Unavailable',
-            headers: new Headers({ 'Content-Type': 'text/plain' })
+            headers: new Headers({
+              'Content-Type': 'text/plain'
+            })
           });
         });
       })
   );
 });
 
-// Sincronização em background como plano B
+// Sincronização em background (opcional, para navegadores que suportam)
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-data') {
-    event.waitUntil(verificarGatilhoMentalOportunista());
+    event.waitUntil(
+      // Aqui você pode adicionar lógica de sincronização
+      Promise.resolve()
+    );
   }
 });
 
-// Evento disparado quando o usuário clica na Notificação Silenciosa
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      if (clientList.length > 0) {
-        return clientList.focus();
-      }
-      return self.clients.openWindow('./');
-    })
-  );
-});
-
-/* =========================================================================
-   MÓDULO: GATILHO MENTAL SILENCIOSO (NUDGE)
-   ========================================================================= */
-async function verificarGatilhoMentalOportunista() {
-  const clientsList = await self.clients.matchAll({ type: 'window' });
-  const appVisivel = clientsList.some(client => client.visibilityState === 'visible');
-  if (appVisivel) return;
-
-  const hoje = new Date().toLocaleString('sv-SE', { timeZoneName: 'unset' }).split(' ');
-  const cacheControle = await caches.open('nudge-controle-v1');
-  
-  const respostaUltimoAcesso = await cacheControle.match('/ultimo-acesso');
-  if (respostaUltimoAcesso) {
-    const dataUltimoAcesso = await respostaUltimoAcesso.text();
-    if (dataUltimoAcesso === hoje) return;
-  }
-
-  const respostaUltimoDisparo = await cacheControle.match('/ultimo-disparo');
-  if (respostaUltimoDisparo) {
-    const dataUltimoDisparo = await respostaUltimoDisparo.text();
-    if (dataUltimoDisparo === hoje) return;
-  }
-
-  try {
-    await self.registration.showNotification('Saldo Seguro', {
-      body: 'Só passando para lembrar que seu futuro financeiro existe.',
-      tag: 'nudge-diario',
-      silent: true,            
-      renotify: false,         
-      requireInteraction: false 
-    });
-
-    await cacheControle.put('/ultimo-disparo', new Response(hoje));
-  } catch (err) {
-    console.warn('[Nudge] Erro ao aplicar estímulo visual:', err);
-  }
-}
+console.log('[SW] Service Worker carregado com sucesso!');
