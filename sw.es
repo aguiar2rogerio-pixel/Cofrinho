@@ -1,5 +1,5 @@
 // Service Worker para Cofrinho Inteligente
-// Versão: 1.0.0
+// Versão: 1.1.0 (Com Lembrete Elegante Offline)
 
 const CACHE_NAME = 'cofrinho-v1';
 const ASSETS_TO_CACHE = [
@@ -16,7 +16,6 @@ self.addEventListener('install', (event) => {
       console.log('[SW] Cache aberto, adicionando assets...');
       return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
         console.warn('[SW] Alguns assets não puderam ser cacheados:', err);
-        // Continuar mesmo se alguns assets falharem
         return cache.add('./').catch(() => {
           console.warn('[SW] Falha ao cachear a página raiz');
         });
@@ -48,16 +47,13 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // Ignorar requisições não-GET
   if (request.method !== 'GET') {
     return;
   }
 
-  // Estratégia: tentar rede primeiro, fallback para cache
   event.respondWith(
     fetch(request)
       .then((response) => {
-        // Se a resposta for bem-sucedida, cacheá-la
         if (response && response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -67,13 +63,11 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Se a rede falhar, tentar o cache
         return caches.match(request).then((cachedResponse) => {
           if (cachedResponse) {
             console.log('[SW] Servindo do cache:', request.url);
             return cachedResponse;
           }
-          // Se não estiver no cache, retornar página offline (se aplicável)
           console.warn('[SW] Recurso não encontrado:', request.url);
           return new Response('Recurso não disponível offline', {
             status: 503,
@@ -87,14 +81,47 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Sincronização em background (opcional, para navegadores que suportam)
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-data') {
+// ==========================================
+// MÓDULO DE LEMBRETE ELEGANTE (SERVICE WORKER)
+// ==========================================
+
+// Recebe comandos da página principal (ex: disparar notificação local silenciosa)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SHOW_SILENT_REMINDER') {
+    const title = event.data.title || 'Saldo Seguro';
+    const options = {
+      body: event.data.body || 'Só passando para lembrar que seu futuro financeiro existe.',
+      icon: 'icon-192.png',
+      badge: 'icon-192.png',
+      silent: true, // Sem som e sem vibração
+      tag: 'daily-reminder', // Evita acumular múltiplas notificações idênticas
+      renotify: false
+    };
+
     event.waitUntil(
-      // Aqui você pode adicionar lógica de sincronização
-      Promise.resolve()
+      self.registration.showNotification(title, options)
     );
   }
+});
+
+// Ao clicar na notificação, foca ou abre o aplicativo de forma direta
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Se o app já estiver aberto em alguma aba/janela, foca nele
+      for (const client of clientList) {
+        if (client.url.includes('./') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Se estiver fechado, abre o aplicativo
+      if (clients.openWindow) {
+        return clients.openWindow('./');
+      }
+    })
+  );
 });
 
 console.log('[SW] Service Worker carregado com sucesso!');
