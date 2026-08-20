@@ -1,11 +1,15 @@
 // Service Worker para Cofrinho Inteligente
-// Versão: 1.1.0 (Com Lembrete Elegante Offline)
+// Versão: 2.0.0 (Estrutura separada e cache atualizado)
 
-const CACHE_NAME = 'cofrinho-v1';
+const CACHE_NAME = 'cofrinho-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './manifest.json'
+  './styles.css',
+  './app.js',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 // Evento de instalação
