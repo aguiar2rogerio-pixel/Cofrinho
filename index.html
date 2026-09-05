@@ -7,23 +7,23 @@
     <title>Cofrinho</title>
     
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css?v=11">
+    <link rel="stylesheet" href="styles.css?v=12">
     
-    <!-- Script leve do Tailwind CSS otimizado para navegadores mobile -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- CSS Clássico e leve do Tailwind (Roda em qualquer celular sem travar) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-900 text-white min-h-screen">
 
     <div id="app"></div>
 
-    <script src="app.js?v=11" defer></script>
+    <script src="app.js?v=12" defer></script>
 
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log('SW ativo'))
+            .then(() => console.log('SW Cofrinho registrado'))
             .catch(err => console.error('Erro SW:', err));
         });
       }
