@@ -1,7 +1,6 @@
-const CACHE_NAME = 'cofrinho-v6';
+const CACHE_NAME = 'cofrinho-v8';
 
-// Recursos locais principais
-const APP_SHELL = [
+const ASSETS = [
   './',
   './index.html',
   './styles.css',
@@ -11,60 +10,55 @@ const APP_SHELL = [
   './icon-512.png'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
+self.addEventListener('install', (e) => {
+  e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Baixa e salva o Tailwind e Lucide no cache mesmo vindo de outros domínios (no-cors)
+      // Salva os arquivos do CDN no cache
       const cdnRequests = [
         new Request('https://cdn.tailwindcss.com', { mode: 'no-cors' }),
         new Request('https://unpkg.com/lucide@latest', { mode: 'no-cors' })
       ];
-      
       cdnRequests.forEach(req => {
-        fetch(req).then(response => cache.put(req, response)).catch(() => {});
+        fetch(req).then(res => cache.put(req, res)).catch(() => {});
       });
 
-      return cache.addAll(APP_SHELL);
+      return cache.addAll(ASSETS);
     }).then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
       );
     }).then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
+  e.respondWith(
+    caches.match(e.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
 
-      return fetch(event.request).then((networkResponse) => {
+      return fetch(e.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          const respClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, respClone));
         }
         return networkResponse;
-      }).catch(() => {
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
       });
+    }).catch(() => {
+      if (e.request.mode === 'navigate') {
+        return caches.match('./index.html');
+      }
     })
   );
 });
