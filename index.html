@@ -9,25 +9,13 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
     
-    <!-- CDNs obrigatórios para o app.js renderizar a tela -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-900 text-white min-h-screen">
 
-    <!-- Container principal onde o app.js desenha a interface -->
     <div id="app"></div>
 
-    <script src="app.js"></script>
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log('SW Cofrinho registrado com sucesso'))
-            .catch(err => console.error('Erro SW Cofrinho:', err));
-        });
-      }
-    </script>
+    <script src="app.js?v=99"></script>
 </body>
 </html>
