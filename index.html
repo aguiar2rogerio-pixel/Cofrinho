@@ -3,30 +3,315 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0f172a">
-    <title>Cofrinho</title>
+    <title>Cofrinho Inteligente v2.0</title>
     
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cofrinho">
+    <meta name="theme-color" content="#09090b">
+    <meta name="description" content="Aplicativo inteligente de gestão de poupança e controle de contas">
+    
+    <!-- Manifest PWA externo -->
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css?v=12">
     
-    <!-- CSS Clássico e leve do Tailwind (Roda em qualquer celular sem travar) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <!-- Ícones para diferentes plataformas -->
+    <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="icon-512.png" sizes="512x512">
+    <link class="apple-touch-icon" href="icon-192.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-slate-900 text-white min-h-screen">
+<body class="min-h-screen pb-24">
 
-    <div id="app"></div>
+    <header class="sticky top-0 z-30 glass-card p-5 rounded-b-[2.5rem] shadow-2xl mb-6">
+        <div class="flex flex-col items-center text-center">
+            <span class="text-zinc-600 text-[9px] font-bold uppercase tracking-[0.18em] mb-2">Cofrinho Inteligente · v2.0</span>
+            <span class="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Saldo Acumulado</span>
+            <h1 id="main-balance" class="text-4xl font-black text-emerald-400 tracking-tighter">R$ 0,00</h1>
+            
+            <div class="grid grid-cols-2 gap-4 w-full mt-5 pt-4 border-t border-zinc-800">
+                <div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50">
+                    <span class="text-zinc-500 text-[9px] uppercase block mb-1">Em Aberto (Acumulado)</span>
+                    <span id="month-debt" class="text-sm font-bold text-zinc-200">R$ 0,00</span>
+                </div>
+                <div class="bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800/50 flex flex-col justify-center items-center">
+                    <span class="text-zinc-500 text-[9px] uppercase block mb-1">Cobertura</span>
+                    <span id="coverage-status" class="text-sm font-bold block">R$ 0,00</span>
+                    <span id="coverage-badge" class="text-[8px] font-bold uppercase tracking-wider block mt-0.5"></span>
+                </div>
+            </div>
+        </div>
+    </header>
 
-    <script src="app.js?v=12" defer></script>
+    <main class="px-4 space-y-6">
+        <!-- Depósito Diário e Balões de Projeção / Auditoria -->
+        <section class="glass-card p-4 rounded-3xl">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Depósito Diário</h3>
+                <span id="today-date" class="text-[10px] text-zinc-500"></span>
+            </div>
+            <div class="flex gap-3 mb-4">
+                <div class="relative flex-1">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">R$</span>
+                    <input type="number" id="daily-input" placeholder="0,00" step="0.50" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl py-3 pl-10 pr-4 text-lg font-bold focus:border-emerald-500 transition-all outline-none">
+                </div>
+                <button onclick="confirmDailyDeposit()" id="btn-daily" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all px-6 rounded-2xl font-bold flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Linha 1: Balões de Projeção Futura (Compromissos dos Próximos Meses) -->
+            <div class="mb-3">
+                <span class="text-[9px] text-zinc-500 uppercase font-extrabold tracking-wider block mb-1.5 ml-0.5">Compromissos por Período</span>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-zinc-900/60 border border-zinc-800 p-2 rounded-xl text-center">
+                        <span id="lbl-curr-month" class="text-[9px] text-zinc-500 uppercase font-bold block truncate">-</span>
+                        <span id="val-curr-month-bills" class="text-xs font-black text-zinc-300">R$ 0,00</span>
+                    </div>
+                    <div class="bg-zinc-900/60 border border-zinc-800 p-2 rounded-xl text-center">
+                        <span id="lbl-next-month" class="text-[9px] text-zinc-500 uppercase font-bold block truncate">-</span>
+                        <span id="val-next-month-bills" class="text-xs font-black text-blue-400">R$ 0,00</span>
+                    </div>
+                    <div class="bg-zinc-900/60 border border-zinc-800 p-2 rounded-xl text-center">
+                        <span id="lbl-after-month" class="text-[9px] text-zinc-500 uppercase font-bold block truncate">-</span>
+                        <span id="val-after-month-bills" class="text-xs font-black text-purple-400">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
 
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log('SW Cofrinho registrado'))
-            .catch(err => console.error('Erro SW:', err));
-        });
-      }
-    </script>
+            <!-- Linha 2: Histórico de Entradas Passadas -->
+            <div class="space-y-2 pt-1 border-t border-zinc-800/50">
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="openDepositHistoryModal('current')" class="bg-zinc-900/80 border border-zinc-800 p-2 rounded-xl text-left hover:bg-zinc-800 transition-colors">
+                        <span class="text-[8px] text-zinc-500 uppercase font-bold block">Entradas do Mês</span>
+                        <span id="pill-current-month" class="text-xs font-bold text-emerald-400">R$ 0,00</span>
+                    </button>
+                    <button onclick="openDepositHistoryModal('previous')" class="bg-zinc-900/80 border border-zinc-800 p-2 rounded-xl text-left hover:bg-zinc-800 transition-colors">
+                        <span class="text-[8px] text-zinc-500 uppercase font-bold block">Mês Anterior</span>
+                        <span id="pill-prev-month" class="text-xs font-bold text-zinc-400">R$ 0,00</span>
+                    </button>
+                </div>
+                
+                <!-- Botão Balão para Ver Todos os Meses Ocultos -->
+                <button onclick="openAllMonthsModal()" class="w-full bg-zinc-900/40 border border-zinc-800/60 py-2 rounded-xl text-center hover:bg-zinc-800 transition-all text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-center gap-1.5">
+                    <i data-lucide="calendar-days" class="w-3.5 h-3.5 text-blue-400"></i>
+                    Ver Histórico de Outros Meses
+                </button>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="openAporteModal()" class="flex items-center justify-center gap-2 p-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl border border-zinc-700 transition-all active:scale-95">
+                <i data-lucide="arrow-up-circle" class="text-blue-400 w-5 h-5"></i>
+                <span class="font-bold text-sm">Aporte</span>
+            </button>
+            <button onclick="openBillModal()" class="flex items-center justify-center gap-2 p-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl border border-zinc-700 transition-all active:scale-95">
+                <i data-lucide="plus-square" class="text-emerald-400 w-5 h-5"></i>
+                <span class="font-bold text-sm">Nova Conta</span>
+            </button>
+        </div>
+
+        <div class="flex border-b border-zinc-800">
+            <button onclick="setFilter('pending')" id="tab-pending" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest tab-active">Pendentes</button>
+            <button onclick="setFilter('paid')" id="tab-paid" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-zinc-500">Pagas</button>
+            <button onclick="setFilter('all')" id="tab-all" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-zinc-500">Tudo</button>
+        </div>
+
+        <!-- Container de Compromissos com Controle Anti-Pergaminho -->
+        <div class="space-y-3">
+            <div id="bills-container" class="space-y-3"></div>
+            <div id="see-more-container" class="hidden text-center pt-1">
+                <button onclick="toggleSeeAll()" id="btn-see-more" class="w-full py-3 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-400 flex items-center justify-center gap-2 transition-all">
+                    <span>Ver Mais Compromissos</span>
+                    <i data-lucide="chevron-down" id="icon-see-more" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <section class="glass-card p-4 rounded-3xl space-y-3">
+            <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Segurança e Ajustes</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="exportData()" class="flex items-center justify-center gap-2 py-3 bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 active:scale-95 transition-all text-xs font-bold text-zinc-200 rounded-xl">
+                    <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+                    Fazer Backup
+                </button>
+                <label class="flex items-center justify-center gap-2 py-3 bg-zinc-900 border border-zinc-700 rounded-xl hover:bg-zinc-800 active:scale-95 transition-all text-xs font-bold text-zinc-200 cursor-pointer">
+                    <i data-lucide="upload" class="w-4 h-4 text-blue-400"></i>
+                    Restaurar
+                    <input type="file" id="import-file" accept=".txt" onchange="importData(event)" class="hidden">
+                </label>
+            </div>
+
+            <!-- OPÇÃO DO LEMBRETE ELEGANTE -->
+            <div class="pt-2 border-t border-zinc-800/60 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="bell" class="w-4 h-4 text-amber-400"></i>
+                    <span class="text-xs font-bold text-zinc-300">Lembrete Diário Discreto</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-reminder" onchange="toggleReminderSetting(this.checked)" class="sr-only peer">
+                    <div class="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-400 after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white"></div>
+                </label>
+            </div>
+        </section>
+
+        <div class="pt-4 pb-4 flex justify-center">
+            <button onclick="resetAllData()" class="text-rose-500/60 hover:text-rose-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors">
+                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                Limpar Todos os Dados
+            </button>
+        </div>
+    </main>
+
+    <!-- Modal: Seletor de Todos os Meses Históricos -->
+    <div id="all-months-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-5 border border-zinc-800 shadow-2xl flex flex-col max-h-[70vh]">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-zinc-800">
+                <h3 class="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                    <i data-lucide="archive" class="w-3.5 h-3.5"></i> Arquivo de Depósitos
+                </h3>
+                <button onclick="closeAllMonthsModal()" class="p-1 text-zinc-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="all-months-list" class="overflow-y-auto space-y-2 flex-1 pr-1 scroll-hide">
+                <!-- Injetado dinamicamente via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Extrato com botão de Excluir Depósitos -->
+    <div id="deposits-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-5 border border-zinc-800 shadow-2xl flex flex-col max-h-[75vh]">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-zinc-800">
+                <button onclick="backToMonthsModal()" id="btn-modal-back" class="text-zinc-500 hover:text-white hidden"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+                <h3 id="deposits-modal-title" class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex-1 text-center">Extrato de Depósitos</h3>
+                <button onclick="closeDepositHistoryModal()" class="p-1 text-zinc-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="deposits-modal-list" class="overflow-y-auto space-y-2 flex-1 pr-1 scroll-hide">
+                <!-- Injetado dinamicamente -->
+            </div>
+            <div class="pt-3 border-t border-zinc-800 mt-2 text-center">
+                <span class="text-[10px] text-zinc-500 uppercase block">Total do Período</span>
+                <span id="deposits-modal-total" class="text-lg font-black text-emerald-400">R$ 0,00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nova Conta -->
+    <div id="bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="bill-modal-title" class="text-xl font-bold">Lançar Compromisso</h3>
+                <button onclick="closeBillModal()" class="p-2 text-zinc-500"><i data-lucide="x"></i></button>
+            </div>
+            <form id="bill-form" class="space-y-4">
+                <input type="text" id="bill-name" required placeholder="Nome (Ex: Mercado, Aluguel...)" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white focus:border-emerald-500 outline-none">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">R$</span>
+                        <input type="number" id="bill-value" step="0.01" required placeholder="Valor Total" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 pl-8 text-white focus:border-emerald-500 outline-none">
+                    </div>
+                    <input type="date" id="bill-date" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white focus:border-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-zinc-500 uppercase mb-1 ml-1">Data do Lançamento</label>
+                    <input type="date" id="bill-launch-date" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white focus:border-emerald-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] text-zinc-500 uppercase mb-1 ml-1">Parcelas</label>
+                        <select id="bill-installments" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white outline-none">
+                            <option value="1">À vista</option>
+                            <option value="2">2x</option>
+                            <option value="3">3x</option>
+                            <option value="4">4x</option>
+                            <option value="5">5x</option>
+                            <option value="6">6x</option>
+                            <option value="7">7x</option>
+                            <option value="8">8x</option>
+                            <option value="9">9x</option>
+                            <option value="10">10x</option>
+                            <option value="11">11x</option>
+                            <option value="12">12x</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end pb-1">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="bill-recurring" class="w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-emerald-600 focus:ring-0">
+                            <span class="text-xs text-zinc-400">Conta Fixa (Mensal)</span>
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" id="bill-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl mt-4 shadow-lg shadow-emerald-900/20 transition-all active:scale-95">
+                    SALVAR LANÇAMENTO
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Aporte -->
+    <div id="aporte-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] p-6 border border-zinc-800 shadow-2xl">
+            <h3 class="text-lg font-bold mb-4 text-center">Realizar Aporte</h3>
+            <div class="relative mb-4">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-bold">R$</span>
+                <input type="number" id="aporte-value" step="0.01" placeholder="0,00" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl p-4 pl-10 text-2xl font-black text-emerald-400 text-center outline-none">
+            </div>
+            <div class="mb-4">
+                <label class="block text-[10px] text-zinc-500 uppercase mb-2 ml-1">Data (opcional)</label>
+                <input type="date" id="aporte-date" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-white focus:border-emerald-500 outline-none text-sm">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeAporteModal()" class="flex-1 bg-zinc-800 py-4 rounded-xl font-bold text-zinc-400">Sair</button>
+                <button onclick="confirmAporte()" class="flex-1 bg-blue-600 py-4 rounded-xl font-bold text-white">Aportar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar / Excluir Lançamento -->
+    <div id="edit-bill-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-zinc-900 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 border border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-emerald-400">Editar Lançamento</h3>
+                <button onclick="closeEditBillModal()" class="p-2 text-zinc-500"><i data-lucide="x"></i></button>
+            </div>
+            <form id="edit-bill-form" class="space-y-4">
+                <input type="hidden" id="edit-bill-id">
+                <input type="text" id="edit-bill-name" required placeholder="Nome" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white focus:border-emerald-500 outline-none">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">R$</span>
+                        <input type="number" id="edit-bill-value" step="0.01" required placeholder="Valor" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 pl-8 text-white focus:border-emerald-500 outline-none">
+                    </div>
+                    <input type="date" id="edit-bill-date" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-4 text-white focus:border-emerald-500 outline-none">
+                </div>
+                <div id="edit-bill-installments-info" class="text-[11px] text-zinc-400 bg-zinc-800/50 p-3 rounded-xl min-h-[20px]"></div>
+                <div class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="edit-bill-recurring" class="w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-emerald-600 focus:ring-0">
+                    <label for="edit-bill-recurring" class="text-xs text-zinc-400">Conta Fixa (Mensal)</label>
+                </div>
+                
+                <div class="flex flex-col gap-2 pt-2">
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-900/20 transition-all active:scale-95 uppercase text-sm tracking-wider">
+                            SALVAR
+                        </button>
+                        <button type="button" onclick="closeEditBillModal()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-black py-4 rounded-2xl transition-all active:scale-95 uppercase text-sm tracking-wider">
+                            CANCELAR
+                        </button>
+                    </div>
+                    <button type="button" onclick="deleteBillFromModal()" class="w-full bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-200 hover:text-white font-bold py-3 rounded-xl transition-all uppercase text-xs tracking-wider mt-2">
+                        🗑️ Excluir este Lançamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
