@@ -313,5 +313,16 @@
     </div>
 
     <script src="app.js"></script>
+
+    <!-- REGISTRO DO SERVICE WORKER PARA FUNCIONAR OFFLINE -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('PWA registrado com sucesso!'))
+            .catch(err => console.error('Erro ao registrar PWA:', err));
+        });
+      }
+    </script>
 </body>
 </html>
