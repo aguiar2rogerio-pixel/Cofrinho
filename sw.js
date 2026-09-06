@@ -1,138 +1,55 @@
-// Improved Service Worker: cache-first app-shell with background update + update flow handling
-const CACHE_NAME = 'cofrinho-v3';
-const APP_SHELL = [
+const CACHE_NAME = 'cofrinho-estavel-v1';
+
+// Apenas arquivos locais do próprio repositório
+const LOCAL_ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png',
-  './offline.html'
+  './icon-512.png'
 ];
 
-const NETWORK_TIMEOUT = 8000; // ms
-
-self.addEventListener('install', (event) => {
-  console.info('[SW] install');
-  event.waitUntil(
+self.addEventListener('install', (e) => {
+  e.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL).catch(err => {
-        console.warn('[SW] some assets failed to cache', err);
-        return cache.add('./').catch(() => {});
-      }))
+      .then((cache) => cache.addAll(LOCAL_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', (event) => {
-  console.info('[SW] activate');
-  event.waitUntil((async () => {
-    // cleanup old caches
-    const keys = await caches.keys();
-    await Promise.all(keys.map(k => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve())));
-    // enable navigation preload if supported
-    if (self.registration.navigationPreload) {
-      try { await self.registration.navigationPreload.enable(); console.info('[SW] navigationPreload enabled'); } catch (e) { console.warn('[SW] preload enable failed', e); }
-    }
-    await self.clients.claim();
-  })());
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) return caches.delete(key);
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
-function fetchWithTimeout(request, timeout = NETWORK_TIMEOUT) {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('network-timeout')), timeout);
-    fetch(request).then(response => {
-      clearTimeout(timer);
-      resolve(response);
-    }).catch(err => {
-      clearTimeout(timer);
-      reject(err);
-    });
-  });
-}
+// Busca primeiro na rede. Se falhar (offline), busca no cache local.
+self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
 
-// helper: background update for a url
-function backgroundUpdate(url) {
-  return fetch(url).then(resp => {
-    if (!resp || resp.status !== 200) return;
-    const copy = resp.clone();
-    return caches.open(CACHE_NAME).then(cache => cache.put(url, copy));
-  }).catch(() => {/* ignore */});
-}
-
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  if (request.method !== 'GET') return;
-
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin) {
-    // cross-origin: network-first, fallback to cache
-    event.respondWith(fetch(request).catch(() => caches.match(request)));
-    return;
-  }
-
-  // Navigation requests (pages) - cache-first + background update
-  if (request.mode === 'navigate') {
-    event.respondWith((async () => {
-      // try cached app shell first
-      const cache = await caches.open(CACHE_NAME);
-      const cached = await cache.match('./index.html');
-      if (cached) {
-        // trigger background update but do not wait for it
-        backgroundUpdate('./index.html');
-        return cached;
-      }
-
-      // no cache -> try network (with preload if available) then fallback to offline
-      try {
-        // try navigation preload response first
-        const preloadResp = await event.preloadResponse;
-        if (preloadResp) {
-          const copy = preloadResp.clone();
-          cache.put('./index.html', copy);
-          return preloadResp;
+  e.respondWith(
+    fetch(e.request)
+      .then((response) => {
+        // Se a resposta for válida e for do nosso próprio domínio, atualiza o cache silenciosamente
+        if (response && response.status === 200 && e.request.url.startsWith(self.location.origin)) {
+          const respClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, respClone));
         }
-        const networkResp = await fetchWithTimeout(request);
-        if (networkResp && networkResp.status === 200) {
-          const copy = networkResp.clone();
-          cache.put('./index.html', copy);
-        }
-        return networkResp;
-      } catch (err) {
-        const fallback = await cache.match('./index.html') || await cache.match('./offline.html');
-        return fallback;
-      }
-    })());
-    return;
-  }
-
-  // Static resources: stale-while-revalidate for scripts/styles/images
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request);
-    if (cached) {
-      // update in background
-      backgroundUpdate(request.url);
-      return cached;
-    }
-    try {
-      const networkResp = await fetchWithTimeout(request);
-      if (networkResp && networkResp.status === 200) {
-        const copy = networkResp.clone();
-        cache.put(request, copy);
-      }
-      return networkResp;
-    } catch (err) {
-      return cache.match('./offline.html');
-    }
-  })());
-});
-
-// listen for skipWaiting message from client
-self.addEventListener('message', (event) => {
-  if (!event.data) return;
-  if (event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+        return response;
+      })
+      .catch(() => {
+        // Sem internet: entrega do cache local ou a página principal
+        return caches.match(e.request).then((cached) => {
+          return cached || caches.match('./index.html');
+        });
+      })
+  );
 });
