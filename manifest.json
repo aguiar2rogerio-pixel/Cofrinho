@@ -1,75 +1,23 @@
 {
-  "name": "Cofrinho Inteligente",
+  "name": "Cofrinho",
   "short_name": "Cofrinho",
-  "description": "Aplicativo inteligente de gestão de poupança e controle de contas",
-  "start_url": "./",
-  "scope": "./",
+  "description": "Gerenciador Financeiro PWA",
+  "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#09090b",
-  "theme_color": "#10b981",
-  "categories": ["finance", "productivity"],
-  "screenshots": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
-  ],
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "Novo Lançamento",
-      "short_name": "Lançar",
-      "description": "Adicionar uma nova conta ou compromisso",
-      "url": "./?action=new-bill",
-      "icons": [
-        {
-          "src": "icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Realizar Aporte",
-      "short_name": "Aportar",
-      "description": "Fazer um aporte no cofrinho",
-      "url": "./?action=aporte",
-      "icons": [
-        {
-          "src": "icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    }
-  ],
-  "prefer_related_applications": false
+  ]
 }
